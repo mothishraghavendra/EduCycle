@@ -1,0 +1,54 @@
+{
+  "name": "educycle",
+  "version": "1.0.0",
+  "description": "Educycle - Student Academic Item Exchange Platform. A modern web application for students to buy and sell academic items like textbooks, calculators, lab equipment, and more.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "setup": "node setup.js",
+    "validate-env": "node -e \"require('./config').validateConfig()\"",
+    "db-check": "node -e \"require('./app'); setTimeout(() => process.exit(0), 2000)\"",
+    "clean": "rm -f *.log"
+  },
+  "keywords": [
+    "educycle",
+    "marketplace",
+    "students",
+    "academic",
+    "textbooks",
+    "education",
+    "exchange",
+    "buy-sell",
+    "campus",
+    "node.js",
+    "express",
+    "mysql"
+  ],
+  "author": {
+    "name": "Mothish K Raghavendra",
+    "email": "your-email@example.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/educycle.git"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.2",
+    "dotenv": "^17.0.1",
+    "express": "^4.18.2",
+    "express-mysql-session": "^3.0.0",
+    "express-session": "^1.17.3",
+    "mysql2": "^3.6.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

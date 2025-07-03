@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Items - Educycle</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f3f3f3;
+            color: #333;
+            padding: 20px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .content-left {
+            flex: 3;
+        }
+
+        .content-right {
+            flex: 1;
+        }
+
+        /* Page Header */
+        .page-header {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .add-item-btn {
+            background-color: #ff9900;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-item-btn:hover {
+            background-color: #e68900;
+        }
+
+        /* Items Grid */
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .item-image {
+            width: 100%;
+            height: 200px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            position: relative;
+        }
+
+        .item-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-sold {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .status-pending {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        .item-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #0066cc;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .item-title:hover {
+            text-decoration: underline;
+        }
+
+        .item-price {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #B12704;
+            margin-bottom: 8px;
+        }
+
+        .item-details {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .item-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .edit-btn {
+            background-color: #0066cc;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background-color: #0052a3;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+
+        .mark-sold-btn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .mark-sold-btn:hover {
+            background-color: #218838;
+        }
+
+        .item-description {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+
+        /* Right Sidebar */
+        .sidebar-section {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .earnings-card {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .earnings-amount {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .earnings-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .empty-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .empty-text {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .main-content {
+                flex-direction: column;
+                padding: 10px;
+                margin: 0;
+                max-width: none;
+            }
+
+            .items-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 15px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .content-right {
+                order: 1;
+                margin-bottom: 20px;
+            }
+            
+            .content-left {
+                order: 2;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+            
+            .main-content {
+                padding: 8px;
+            }
+            
+            .items-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .page-header {
+                padding: 15px;
+            }
+            
+            .page-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Left Content -->
+        <div class="content-left">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 class="page-title">My Items</h1>
+                <p class="page-subtitle">Manage your listed items, track sales, and add new products to sell</p>
+                <button class="add-item-btn" onclick="navigateToListItem()">
+                    <i class="bi bi-plus-circle"></i>
+                    Add New Item
+                </button>
+            </div>
+
+            <!-- Items Grid -->
+            <div class="items-grid" id="itemsGrid">
+                <!-- Items will be loaded dynamically -->
+                <div class="loading-message" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">
+                    <i class="bi bi-hourglass-split" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                    Loading your items...
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="content-right">
+            <!-- Earnings Card -->
+            <div class="earnings-card">
+                <div class="earnings-amount">₹0</div>
+                <div class="earnings-label">Total Earnings</div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <i class="bi bi-graph-up"></i> Your Stats
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">6</div>
+                        <div class="stat-label">Active Items</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">1</div>
+                        <div class="stat-label">Items Sold</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+    </main>
+
+    <script>
+        let allProducts = [];
+        let soldItemsData = {
+            count: 0,
+            totalEarnings: 0,
+            items: []
+        };
+
+        // Navigation function to communicate with parent dashboard
+        function navigateToListItem() {
+            // Send message to parent window (dashboard)
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'navigate',
+                    page: 'list_a_item.html'
+                }, '*');
+            } else {
+                // Fallback if not in iframe
+                window.location.href = 'list_a_item.html';
+            }
+        }
+
+        // Format currency
+        function formatPrice(price) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                minimumFractionDigits: 0
+            }).format(price);
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-IN', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Get status display info
+        function getStatusInfo(product) {
+            // For now, we'll assume all products are active
+            // In the future, you can add a status field to the database
+            return {
+                class: 'status-active',
+                text: 'Active'
+            };
+        }
+
+        // Create item card HTML
+        function createItemCard(product) {
+            const statusInfo = getStatusInfo(product);
+            const imageUrl = product.image1 || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjBGMEYwIi8+CjxwYXRoIGQ9Ik03MCA3MEgxMzBWMTMwSDcwVjcwWiIgZmlsbD0iI0NDQ0NDQyIvPgo8L3N2Zz4K';
+            
+            return `
+                <div class="item-card" data-product-id="${product.product_id}" data-category="${product.category?.toLowerCase() || ''}" data-status="active">
+                    <div class="item-image">
+                        <img src="${imageUrl}" alt="${product.name}" style="width: 50%; height: 100%; object-fit: cover; border-radius: 5px;" 
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjBGMEYwIi8+CjxwYXRoIGQ9Ik03MCA3MEgxMzBWMTMwSDcwVjcwWiIgZmlsbD0iI0NDQ0NDQyIvPgo8L3N2Zz4K'">
+                        <div class="item-status ${statusInfo.class}">${statusInfo.text}</div>
+                    </div>
+                    <div class="item-title">${product.name}</div>
+                    <div class="item-price">${formatPrice(product.price)}</div>
+                    ${product.description ? `<div class="item-description">${product.description}</div>` : ''}
+                    <div class="item-details">
+                        <div><strong>Category:</strong> ${product.category || 'Not specified'}</div>
+                        <div><strong>Condition:</strong> ${product.condition_item || 'Not specified'}</div>
+                        <div><strong>Listed:</strong> ${formatDate(product.created_at)}</div>
+                    </div>
+                    <div class="item-stats">
+                        <span><i class="bi bi-eye"></i> 0 views</span>
+                        <span><i class="bi bi-heart"></i> 0 likes</span>
+                    </div>
+                    <div class="item-actions">
+                        <button class="action-btn edit-btn" onclick="editProduct(${product.product_id})">Edit</button>
+                        <button class="action-btn mark-sold-btn" onclick="markAsSold(${product.product_id}, '${product.name}')">Mark as Sold</button>
+                        <button class="action-btn delete-btn" onclick="deleteProduct(${product.product_id}, '${product.name}')">Delete</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load user's products
+        async function loadMyProducts() {
+            try {
+                console.log('🔄 Loading user products...');
+                
+                // Fetch active products and sold items in parallel
+                const [productsResponse, soldItemsResponse] = await Promise.all([
+                    fetch('/api/my-products'),
+                    fetch('/api/my-sold-items')
+                ]);
+
+                const productsData = await productsResponse.json();
+                const soldItemsData = await soldItemsResponse.json();
+
+                if (productsData.success) {
+                    allProducts = productsData.products;
+                    console.log('✅ Loaded products:', allProducts.length);
+                    renderProducts(allProducts);
+                } else {
+                    console.error('❌ Failed to load products:', productsData.message);
+                    showError(productsData.message || 'Failed to load your products');
+                }
+
+                if (soldItemsData.success) {
+                    window.soldItemsData = {
+                        count: soldItemsData.count,
+                        totalEarnings: soldItemsData.totalEarnings,
+                        items: soldItemsData.soldItems
+                    };
+                    console.log('✅ Loaded sold items:', soldItemsData.count);
+                } else {
+                    console.error('❌ Failed to load sold items:', soldItemsData.message);
+                }
+
+                // Update stats with both active and sold items
+                updateStats(allProducts);
+
+            } catch (error) {
+                console.error('❌ Error loading products:', error);
+                showError('Unable to connect to server. Please try again later.');
+            }
+        }
+
+        // Render products in the grid
+        function renderProducts(products) {
+            const itemsGrid = document.getElementById('itemsGrid');
+            
+            if (products.length === 0) {
+                itemsGrid.innerHTML = `
+                    <div class="no-items-message" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">
+                        <i class="bi bi-box" style="font-size: 3rem; margin-bottom: 15px; display: block; color: #ccc;"></i>
+                        <h3 style="margin-bottom: 10px; color: #333;">No Items Listed Yet</h3>
+                        <p style="margin-bottom: 20px;">Start selling by adding your first item!</p>
+                        <button class="add-item-btn" onclick="navigateToListItem()" style="margin: 0 auto;">
+                            <i class="bi bi-plus-circle"></i>
+                            Add Your Item
+                        </button>
+                    </div>
+                `;
+            } else {
+                itemsGrid.innerHTML = products.map(product => createItemCard(product)).join('');
+            }
+        }
+
+        // Update stats in the sidebar
+        function updateStats(products) {
+            const activeItems = products.length;
+            const soldItems = window.soldItemsData ? window.soldItemsData.count : 0;
+            const totalEarnings = window.soldItemsData ? window.soldItemsData.totalEarnings : 0;
+
+            // Update stat cards
+            const statCards = document.querySelectorAll('.stat-card');
+            if (statCards.length >= 2) {
+                statCards[0].querySelector('.stat-number').textContent = activeItems;
+                statCards[1].querySelector('.stat-number').textContent = soldItems;
+            }
+
+            // Update earnings card
+            const earningsAmount = document.querySelector('.earnings-amount');
+            if (earningsAmount) {
+                earningsAmount.textContent = new Intl.NumberFormat('en-IN', {
+                    style: 'currency',
+                    currency: 'INR',
+                    minimumFractionDigits: 0
+                }).format(totalEarnings);
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const itemsGrid = document.getElementById('itemsGrid');
+            itemsGrid.innerHTML = `
+                <div class="error-message" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #dc3545;">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+                    <h3 style="margin-bottom: 10px;">Error Loading Items</h3>
+                    <p style="margin-bottom: 20px;">${message}</p>
+                    <button class="add-item-btn" onclick="loadMyProducts()" style="background-color: #dc3545; margin: 0 auto;">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Try Again
+                    </button>
+                </div>
+            `;
+        }
+
+        // Edit product function
+        function editProduct(productId) {
+            console.log('Edit product:', productId);
+            // TODO: Implement edit functionality
+            alert('Edit functionality will be implemented soon!');
+        }
+
+        // Delete product function
+        async function deleteProduct(productId, productName) {
+            if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/products/${productId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Product deleted successfully!');
+                    loadMyProducts(); // Reload the products
+                } else {
+                    alert('Failed to delete product: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                alert('Failed to delete product. Please try again.');
+            }
+        }
+
+        // Mark product as sold
+        async function markAsSold(productId, productName) {
+            if (!confirm(`Are you sure you want to mark "${productName}" as sold? This will move it to your sold items.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/products/${productId}/mark-sold`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Product marked as sold successfully!');
+                    loadMyProducts(); // Reload the products
+                } else {
+                    alert('Failed to mark product as sold: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error marking product as sold:', error);
+                alert('Failed to mark product as sold. Please try again.');
+            }
+        }
+
+        // Load products when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 My Items page loaded');
+            loadMyProducts();
+        });
+    </script>
+</body>
+</html>
