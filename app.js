@@ -19,15 +19,22 @@ const PORT = config.server.port;
 const HOST = config.server.host;
 const NODE_ENV = config.server.environment;
 
-// MySQL Database Configuration
+// MySQL Database Configuration - Updated for PostgreSQL compatibility
 const dbConfig = config.database;
 
-// Create MySQL connection pool
-const pool = mysql.createPool(dbConfig);
-const promisePool = pool.promise();
+// Use database adapter for PostgreSQL/MySQL compatibility
+const db = require('./database');
+const promisePool = db;
 
-// Session store configuration
-const sessionStore = new MySQLStore(dbConfig);
+// Session store configuration (MySQL) or memory store (PostgreSQL)
+let sessionStore;
+if (process.env.DATABASE_URL) {
+    // PostgreSQL - use memory store
+    sessionStore = undefined;
+} else {
+    // MySQL - use MySQL session store
+    sessionStore = new MySQLStore(dbConfig);
+}
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -35,10 +42,9 @@ app.use(bodyParser.json());
 app.use(express.static(__dirname));
 
 // Session configuration
-app.use(session({
+const sessionConfig = {
     key: config.session.name,
     secret: config.session.secret,
-    store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -46,18 +52,37 @@ app.use(session({
         secure: config.session.secure,
         httpOnly: config.session.httpOnly
     }
-}));
+};
+
+// Add store only if available (MySQL)
+if (sessionStore) {
+    sessionConfig.store = sessionStore;
+}
+
+app.use(session(sessionConfig));
 
 // Database connection test
-pool.getConnection((err, connection) => {
-    if (err) {
-        console.error('❌ Error connecting to MySQL database:', err.message);
-        console.error('💡 Please check your database configuration in .env file');
+async function testDatabaseConnection() {
+    try {
+        if (process.env.DATABASE_URL) {
+            // PostgreSQL test
+            await promisePool.query('SELECT 1');
+            console.log('✅ Connected to PostgreSQL database successfully!');
+        } else {
+            // MySQL test
+            const connection = await promisePool.getConnection();
+            console.log('✅ Connected to MySQL database successfully!');
+            connection.release();
+        }
+    } catch (err) {
+        console.error('❌ Error connecting to database:', err.message);
+        console.error('💡 Please check your database configuration');
         process.exit(1);
     }
-    console.log('✅ Connected to MySQL database successfully!');
-    connection.release();
-});
+}
+
+// Test database connection
+testDatabaseConnection();
 
 // Create users table if it doesn't exist
 const createUsersTable = async () => {
