@@ -299,15 +299,5 @@ CREATE TABLE sold_items (
 - Use `console.log` statements for debugging
 - Consider using a logging library like Winston for production
 
-## Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-This project is licensed under the MIT License.
-
 ## Support
-For support or questions, please contact [your-email@example.com] or create an issue in the repository.
+For support or questions, please contact [mothish.k.raghavendra@gmail.com] or create an issue in the repository.
