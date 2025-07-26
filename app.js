@@ -19,22 +19,15 @@ const PORT = config.server.port;
 const HOST = config.server.host;
 const NODE_ENV = config.server.environment;
 
-// MySQL Database Configuration - Updated for PostgreSQL compatibility
+// MySQL Database Configuration
 const dbConfig = config.database;
 
-// Use database adapter for PostgreSQL/MySQL compatibility
-const db = require('./database');
-const promisePool = db;
+// Create MySQL connection pool
+const pool = mysql.createPool(dbConfig);
+const promisePool = pool.promise();
 
-// Session store configuration (MySQL) or memory store (PostgreSQL)
-let sessionStore;
-if (process.env.DATABASE_URL) {
-    // PostgreSQL - use memory store
-    sessionStore = undefined;
-} else {
-    // MySQL - use MySQL session store
-    sessionStore = new MySQLStore(dbConfig);
-}
+// Session store configuration
+const sessionStore = new MySQLStore(dbConfig);
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -42,9 +35,10 @@ app.use(bodyParser.json());
 app.use(express.static(__dirname));
 
 // Session configuration
-const sessionConfig = {
+app.use(session({
     key: config.session.name,
     secret: config.session.secret,
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -52,37 +46,18 @@ const sessionConfig = {
         secure: config.session.secure,
         httpOnly: config.session.httpOnly
     }
-};
-
-// Add store only if available (MySQL)
-if (sessionStore) {
-    sessionConfig.store = sessionStore;
-}
-
-app.use(session(sessionConfig));
+}));
 
 // Database connection test
-async function testDatabaseConnection() {
-    try {
-        if (process.env.DATABASE_URL) {
-            // PostgreSQL test
-            await promisePool.query('SELECT 1');
-            console.log('✅ Connected to PostgreSQL database successfully!');
-        } else {
-            // MySQL test
-            const connection = await promisePool.getConnection();
-            console.log('✅ Connected to MySQL database successfully!');
-            connection.release();
-        }
-    } catch (err) {
-        console.error('❌ Error connecting to database:', err.message);
-        console.error('💡 Please check your database configuration');
+pool.getConnection((err, connection) => {
+    if (err) {
+        console.error('❌ Error connecting to MySQL database:', err.message);
+        console.error('💡 Please check your database configuration in .env file');
         process.exit(1);
     }
-}
-
-// Test database connection
-testDatabaseConnection();
+    console.log('✅ Connected to MySQL database successfully!');
+    connection.release();
+});
 
 // Create users table if it doesn't exist
 const createUsersTable = async () => {
@@ -808,6 +783,31 @@ app.get('/api/cart', async (req, res) => {
     }
 });
 
+// Get cart count only (for efficiency)
+app.get('/api/cart/count', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ success: false, message: 'Please log in' });
+    }
+
+    try {
+        const [result] = await promisePool.execute(
+            'SELECT COUNT(*) as count FROM cart WHERE user_id = ?',
+            [req.session.userId]
+        );
+
+        res.json({
+            success: true,
+            count: result[0].count
+        });
+    } catch (error) {
+        console.error('❌ Get cart count error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch cart count'
+        });
+    }
+});
+
 // Add item to cart
 app.post('/api/cart/add', async (req, res) => {
     if (!req.session.userId) {
@@ -1129,6 +1129,541 @@ app.post('/api/products/:productId/mark-sold', async (req, res) => {
         });
     }
 });
+
+// ================================
+// ADMIN PANEL ROUTES
+// ================================
+
+// Admin authentication middleware
+function requireAdmin(req, res, next) {
+    // Check if user is logged in and has admin privileges
+    if (!req.session.userId || !req.session.isAdmin) {
+        return res.status(401).json({
+            success: false,
+            message: 'Admin authentication required'
+        });
+    }
+    
+    next();
+}
+
+// Admin login page
+app.get('/admin-login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin-login.html'));
+});
+
+// Admin login handler
+app.post('/admin-login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        // Get admin credentials from environment variables
+        const adminUsername = config.admin.username;
+        const adminPassword = config.admin.password;
+        
+        // Verify admin credentials
+        if (username === adminUsername && password === adminPassword) {
+            // Set admin session
+            req.session.isAdmin = true;
+            req.session.adminUsername = username;
+            req.session.userId = 'admin'; // Set a dummy user ID for admin
+            
+            console.log(`✅ Admin login successful: ${username}`);
+            
+            res.json({
+                success: true,
+                message: 'Admin login successful'
+            });
+        } else {
+            console.log(`❌ Admin login failed: ${username}`);
+            
+            res.status(401).json({
+                success: false,
+                message: 'Invalid admin credentials'
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Admin login error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Login failed'
+        });
+    }
+});
+
+// Admin logout
+app.post('/admin-logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('❌ Admin logout error:', err);
+            return res.status(500).json({
+                success: false,
+                message: 'Logout failed'
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: 'Logged out successfully'
+        });
+    });
+});
+
+// Admin panel access route (protected)
+app.get('/admin', requireAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// Admin Dashboard Data
+app.get('/api/admin/dashboard', requireAdmin, async (req, res) => {
+    try {
+        const [
+            [totalUsersResult],
+            [totalProductsResult],
+            [productsSoldResult],
+            [totalRevenueResult],
+            [freeDonationsResult],
+            [activeTodayResult]
+        ] = await Promise.all([
+            promisePool.execute('SELECT COUNT(*) as count FROM users'),
+            promisePool.execute('SELECT COUNT(*) as count FROM products'),
+            promisePool.execute('SELECT COUNT(*) as count FROM sold_items'),
+            promisePool.execute('SELECT COALESCE(SUM(price), 0) as total FROM sold_items'),
+            promisePool.execute('SELECT COUNT(*) as count FROM products WHERE price = 0'),
+            promisePool.execute(`
+                SELECT COUNT(DISTINCT user_id) as count 
+                FROM products 
+                WHERE DATE(created_at) = CURDATE()
+            `)
+        ]);
+
+        // Get recent activity
+        const [recentActivity] = await promisePool.execute(`
+            SELECT 
+                CONCAT('User ', u.username, ' listed ', p.name) as message,
+                p.created_at as timestamp
+            FROM products p
+            JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
+            LIMIT 10
+        `);
+
+        res.json({
+            success: true,
+            data: {
+                totalUsers: totalUsersResult[0].count,
+                totalProducts: totalProductsResult[0].count,
+                productsSold: productsSoldResult[0].count,
+                totalRevenue: totalRevenueResult[0].total,
+                freeDonations: freeDonationsResult[0].count,
+                activeToday: activeTodayResult[0].count,
+                recentActivity: recentActivity
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Admin dashboard error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load dashboard data'
+        });
+    }
+});
+
+// Get all users
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+    try {
+        const [users] = await promisePool.execute(`
+            SELECT 
+                u.*,
+                COUNT(p.product_id) as product_count
+            FROM users u
+            LEFT JOIN products p ON u.id = p.user_id
+            GROUP BY u.id
+            ORDER BY u.created_at DESC
+        `);
+
+        res.json({
+            success: true,
+            users: users
+        });
+
+    } catch (error) {
+        console.error('❌ Admin users error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load users'
+        });
+    }
+});
+
+// Get all products
+app.get('/api/admin/products', requireAdmin, async (req, res) => {
+    try {
+        const [products] = await promisePool.execute(`
+            SELECT 
+                p.*,
+                u.username,
+                CASE WHEN s.original_product_id IS NOT NULL THEN 1 ELSE 0 END as is_sold
+            FROM products p
+            JOIN users u ON p.user_id = u.id
+            LEFT JOIN sold_items s ON p.product_id = s.original_product_id
+            ORDER BY p.created_at DESC
+        `);
+
+        // Convert LONGBLOB images to base64 for display
+        const productsWithImages = products.map(product => {
+            const productCopy = { ...product };
+            
+            // Convert image1 LONGBLOB to base64 data URL
+            if (product.image1) {
+                const base64Image = Buffer.from(product.image1).toString('base64');
+                productCopy.image1 = `data:image/jpeg;base64,${base64Image}`;
+            }
+            
+            // Remove LONGBLOB data from other image fields to avoid sending large data
+            delete productCopy.image2;
+            delete productCopy.image3;
+            
+            return productCopy;
+        });
+
+        res.json({
+            success: true,
+            products: productsWithImages
+        });
+
+    } catch (error) {
+        console.error('❌ Admin products error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load products'
+        });
+    }
+});
+
+// Get all sales
+app.get('/api/admin/sales', requireAdmin, async (req, res) => {
+    try {
+        const [sales] = await promisePool.execute(`
+            SELECT 
+                s.sold_id as id,
+                s.name as product_name,
+                s.price as sale_price,
+                s.sold_at,
+                s.category,
+                s.condition_item,
+                u.username as seller_name,
+                'N/A' as buyer_name
+            FROM sold_items s
+            JOIN users u ON s.user_id = u.id
+            ORDER BY s.sold_at DESC
+        `);
+
+        res.json({
+            success: true,
+            sales: sales
+        });
+
+    } catch (error) {
+        console.error('❌ Admin sales error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load sales'
+        });
+    }
+});
+
+// Get analytics data
+app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
+    try {
+        // Category statistics
+        const [categoryStats] = await promisePool.execute(`
+            SELECT category, COUNT(*) as count
+            FROM products
+            GROUP BY category
+        `);
+
+        // New users this month
+        const [newUsersResult] = await promisePool.execute(`
+            SELECT COUNT(*) as count
+            FROM users
+            WHERE MONTH(created_at) = MONTH(CURDATE()) 
+            AND YEAR(created_at) = YEAR(CURDATE())
+        `);
+
+        // Revenue this month - fixed field name
+        const [revenueResult] = await promisePool.execute(`
+            SELECT COALESCE(SUM(price), 0) as total
+            FROM sold_items
+            WHERE MONTH(sold_at) = MONTH(CURDATE()) 
+            AND YEAR(sold_at) = YEAR(CURDATE())
+        `);
+
+        const categoryStatsObj = {};
+        categoryStats.forEach(stat => {
+            categoryStatsObj[stat.category] = stat.count;
+        });
+
+        res.json({
+            success: true,
+            analytics: {
+                categoryStats: categoryStatsObj,
+                newUsersThisMonth: newUsersResult[0].count,
+                revenueThisMonth: revenueResult[0].total
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Admin analytics error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load analytics'
+        });
+    }
+});
+
+// Delete product (admin)
+app.delete('/api/admin/products/:productId', requireAdmin, async (req, res) => {
+    try {
+        const { productId } = req.params;
+
+        // First check if product exists
+        const [product] = await promisePool.execute(
+            'SELECT * FROM products WHERE product_id = ?',
+            [productId]
+        );
+
+        if (product.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        // Delete from cart first (foreign key constraint)
+        await promisePool.execute(
+            'DELETE FROM cart WHERE product_id = ?',
+            [productId]
+        );
+
+        // Delete from sold_items if exists
+        await promisePool.execute(
+            'DELETE FROM sold_items WHERE product_id = ?',
+            [productId]
+        );
+
+        // Delete the product
+        await promisePool.execute(
+            'DELETE FROM products WHERE product_id = ?',
+            [productId]
+        );
+
+        console.log(`✅ Admin deleted product: ID ${productId}`);
+
+        res.json({
+            success: true,
+            message: 'Product deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ Admin delete product error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete product'
+        });
+    }
+});
+
+// Delete user (admin)
+app.delete('/api/admin/users/:userId', requireAdmin, async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // First check if user exists
+        const [user] = await promisePool.execute(
+            'SELECT * FROM users WHERE id = ?',
+            [userId]
+        );
+
+        if (user.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Use transaction for data integrity
+        const connection = await promisePool.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            // Delete from cart
+            await connection.execute('DELETE FROM cart WHERE user_id = ?', [userId]);
+            
+            // Delete from sold_items (both as seller and buyer)
+            await connection.execute('DELETE FROM sold_items WHERE seller_id = ? OR buyer_id = ?', [userId, userId]);
+            
+            // Delete products (will cascade to cart and sold_items due to foreign keys)
+            await connection.execute('DELETE FROM products WHERE user_id = ?', [userId]);
+            
+            // Delete user
+            await connection.execute('DELETE FROM users WHERE id = ?', [userId]);
+
+            await connection.commit();
+            connection.release();
+
+            console.log(`✅ Admin deleted user: ID ${userId}`);
+
+            res.json({
+                success: true,
+                message: 'User deleted successfully'
+            });
+
+        } catch (transactionError) {
+            await connection.rollback();
+            connection.release();
+            throw transactionError;
+        }
+
+    } catch (error) {
+        console.error('❌ Admin delete user error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete user'
+        });
+    }
+});
+
+// Export data (admin)
+app.get('/api/admin/export', requireAdmin, async (req, res) => {
+    try {
+        const [users] = await promisePool.execute('SELECT * FROM users');
+        const [products] = await promisePool.execute('SELECT * FROM products');
+        const [sales] = await promisePool.execute('SELECT * FROM sold_items');
+
+        const exportData = {
+            users,
+            products,
+            sales,
+            exportDate: new Date().toISOString()
+        };
+
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename=educycle-data-export.json');
+        res.json(exportData);
+
+    } catch (error) {
+        console.error('❌ Admin export error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to export data'
+        });
+    }
+});
+
+// Clear cache (admin)
+app.post('/api/admin/clear-cache', requireAdmin, async (req, res) => {
+    try {
+        // In a real application, you would clear your cache here
+        // For now, we'll just return success
+        console.log(`✅ Admin cleared cache`);
+
+        res.json({
+            success: true,
+            message: 'Cache cleared successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ Admin clear cache error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to clear cache'
+        });
+    }
+});
+
+// Generate report (admin)
+app.get('/api/admin/report', requireAdmin, async (req, res) => {
+    try {
+        const [dashboardData] = await Promise.all([
+            Promise.all([
+                promisePool.execute('SELECT COUNT(*) as count FROM users'),
+                promisePool.execute('SELECT COUNT(*) as count FROM products'),
+                promisePool.execute('SELECT COUNT(*) as count FROM sold_items'),
+                promisePool.execute('SELECT COALESCE(SUM(price), 0) as total FROM sold_items'),
+                promisePool.execute('SELECT COUNT(*) as count FROM products WHERE price = 0')
+            ])
+        ]);
+
+        const [
+            [totalUsersResult],
+            [totalProductsResult],
+            [productsSoldResult],
+            [totalRevenueResult],
+            [freeDonationsResult]
+        ] = dashboardData[0];
+
+        const reportHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>EduCycle Platform Report</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 40px; }
+                    .header { text-align: center; margin-bottom: 40px; }
+                    .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+                    .stat-card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+                    .stat-number { font-size: 2em; color: #52ab98; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>EduCycle Platform Report</h1>
+                    <p>Generated on: ${new Date().toLocaleDateString()}</p>
+                </div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>Total Users</h3>
+                        <div class="stat-number">${totalUsersResult[0].count}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Products</h3>
+                        <div class="stat-number">${totalProductsResult[0].count}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Products Sold</h3>
+                        <div class="stat-number">${productsSoldResult[0].count}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Revenue</h3>
+                        <div class="stat-number">₹${totalRevenueResult[0].total}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Free Donations</h3>
+                        <div class="stat-number">${freeDonationsResult[0].count}</div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+
+        res.setHeader('Content-Type', 'text/html');
+        res.send(reportHtml);
+
+    } catch (error) {
+        console.error('❌ Admin report error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate report'
+        });
+    }
+});
+
+// ================================
+// END ADMIN PANEL ROUTES
+// ================================
 
 // Error handling middleware
 app.use((err, req, res, next) => {

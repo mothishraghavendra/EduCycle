@@ -521,6 +521,7 @@
                 <div class="cart-section">
                     <a href="#" class="nav-item" onclick="loadPage('cart.html', this)">
                     <i class="bi bi-cart3 cart-icon"></i>
+                    <span class="cart-count" id="cartCount">0</span>
                     <span class="cart-text">Cart</span>
                     </a>
                 </div>
@@ -578,6 +579,9 @@
                     
                     // Update location
                     document.getElementById('userLocation').textContent = data.user.location;
+                    
+                    // Fetch cart count after user data is loaded
+                    fetchCartCount();
                 } else {
                     // If not authenticated, redirect to login
                     if (response.status === 401) {
@@ -594,6 +598,39 @@
                 // Fallback values for network errors
                 document.getElementById('userName').textContent = 'User';
                 document.getElementById('userLocation').textContent = 'Location not available';
+            }
+        }
+
+        // Fetch cart count from backend
+        async function fetchCartCount() {
+            try {
+                const response = await fetch('/api/cart/count');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateCartCount(data.count);
+                } else {
+                    console.warn('Failed to fetch cart count:', data.message);
+                    updateCartCount(0);
+                }
+            } catch (error) {
+                console.error('Error fetching cart count:', error);
+                updateCartCount(0);
+            }
+        }
+
+        // Update cart count display
+        function updateCartCount(count) {
+            const cartCountElement = document.getElementById('cartCount');
+            const numericCount = parseInt(count) || 0;
+            
+            cartCountElement.textContent = numericCount;
+            
+            // Show/hide cart count based on whether there are items
+            if (numericCount > 0) {
+                cartCountElement.style.display = 'flex';
+            } else {
+                cartCountElement.style.display = 'none';
             }
         }
 
@@ -643,6 +680,20 @@
         window.addEventListener('message', function(event) {
             if (event.data.type === 'navigate') {
                 loadPage(event.data.page, document.querySelector(`[onclick*="${event.data.page}"]`));
+            } else if (event.data.type === 'cartUpdated') {
+                // Handle cart updates from iframe
+                console.log('🛒 Cart updated from iframe:', event.data);
+                
+                if (event.data.action === 'add') {
+                    // Refresh cart count when item is added
+                    fetchCartCount();
+                } else if (event.data.action === 'remove') {
+                    // Refresh cart count when item is removed
+                    fetchCartCount();
+                } else if (event.data.action === 'update') {
+                    // Direct count update
+                    updateCartCount(event.data.count);
+                }
             }
         });
 

@@ -638,6 +638,15 @@
                     console.log('✅ Loaded cart items:', cartItems.length);
                     renderCartItems(cartItems);
                     updateCartSummary(cartItems, data.total);
+                    
+                    // Notify parent dashboard about current cart count
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'cartUpdated',
+                            action: 'update',
+                            count: cartItems.length
+                        }, '*');
+                    }
                 } else {
                     console.error('❌ Failed to load cart:', data.message);
                     showError(data.message || 'Failed to load your cart');
@@ -715,6 +724,15 @@
                 if (data.success) {
                     alert('Item removed from cart successfully!');
                     loadCartItems(); // Reload the cart
+                    
+                    // Notify parent dashboard about cart update
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'cartUpdated',
+                            action: 'remove',
+                            cartId: cartId
+                        }, '*');
+                    }
                 } else {
                     alert('Failed to remove item: ' + (data.message || 'Unknown error'));
                 }

@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduCycle Admin Panel</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://use.typekit.net/ksi0xpe.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f3f3f3;
+            color: #333;
+        }
+
+        /* Header Styles - Match Dashboard */
+        .admin-header {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 0;
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+        }
+
+        .admin-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+        }
+
+        .admin-logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .admin-logo-section img {
+            height: 40px;
+        }
+
+        .admin-logo-section h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            font-family: "waters-titling-pro", sans-serif;
+        }
+
+        .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .admin-welcome {
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        .logout-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .logout-btn:hover {
+            background-color: #c82333;
+            transform: translateY(-1px);
+        }
+
+        /* Navigation Bar - Match Dashboard */
+        .admin-nav {
+            background-color: #2563eb;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+        }
+
+        .nav-btn {
+            color: white;
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .nav-btn:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .nav-btn.active {
+            background-color: #1d4ed8;
+            font-weight: bold;
+        }
+
+        /* Main Content */
+        .admin-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #1e3a8a;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, #1e3a8a10, #2563eb10);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .stat-icon {
+            font-size: 1.8rem;
+            color: #1e3a8a;
+            opacity: 0.8;
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-description {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            color: #1e3a8a;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #2563eb;
+            font-weight: bold;
+        }
+
+        /* Search and Filter Bar */
+        .search-filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .filter-select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .refresh-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .refresh-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        /* Data Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .data-table th {
+            background: #1e3a8a;
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9ff;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Action Buttons */
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .action-btn.delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .action-btn.delete:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .action-btn.edit {
+            background: #28a745;
+            color: white;
+        }
+
+        .action-btn.edit:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .action-btn.view {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .action-btn.view:hover {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+
+        /* Product Images */
+        .product-image {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .no-image {
+            width: 50px;
+            height: 50px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #999;
+            border: 2px solid #e0e0e0;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-sold {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Loading and No Data States */
+        .loading, .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Recent Activity */
+        .activity-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #2563eb;
+        }
+
+        .activity-text {
+            flex: 1;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .activity-time {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .admin-header-top {
+                flex-direction: column;
+                gap: 10px;
+                padding: 15px;
+            }
+
+            .admin-nav {
+                flex-direction: column;
+                gap: 10px;
+                padding: 15px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .data-table {
+                font-size: 0.8rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px 6px;
+            }
+
+            .admin-content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section - Match Dashboard -->
+    <div class="admin-header">
+        <div class="admin-header-top">
+            <div class="admin-logo-section">
+                <img src="images/logo.png" alt="EduCycle Logo">
+            </div>
+            <div class="admin-info">
+                <span class="admin-welcome">Welcome, SAHARA</span>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="bi bi-power cart-icon"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Bar - Match Dashboard -->
+    <div class="admin-nav">
+        <button class="nav-btn active" onclick="showSection('dashboard')">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </button>
+        <button class="nav-btn" onclick="showSection('users')">
+            <i class="bi bi-people"></i> Users
+        </button>
+        <button class="nav-btn" onclick="showSection('products')">
+            <i class="bi bi-box"></i> Products
+        </button>
+        <button class="nav-btn" onclick="showSection('sales')">
+            <i class="bi bi-graph-up"></i> Sales
+        </button>
+        <button class="nav-btn" onclick="showSection('analytics')">
+            <i class="bi bi-bar-chart"></i> Analytics
+        </button>
+        <button class="nav-btn" onclick="showSection('settings')">
+            <i class="bi bi-gear"></i> Settings
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="admin-content">
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="content-section active">
+            <h2 class="section-title"><i class="bi bi-speedometer2"></i> Dashboard Overview</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Total Users</h3>
+                        <i class="bi bi-people stat-icon"></i>
+                    </div>
+                    <div class="stat-number" id="totalUsers">-</div>
+                    <div class="stat-description">Registered users on platform</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Total Products</h3>
+                        <i class="bi bi-box stat-icon"></i>
+                    </div>
+                    <div class="stat-number" id="totalProducts">-</div>
+                    <div class="stat-description">Items listed for sale</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Products Sold</h3>
+                        <i class="bi bi-cart-check stat-icon"></i>
+                    </div>
+                    <div class="stat-number" id="productsSold">-</div>
+                    <div class="stat-description">Successfully completed sales</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Total Revenue</h3>
+                        <i class="bi bi-currency-dollar stat-icon"></i>
+                    </div>
+                    <div class="stat-number" id="totalRevenue">₹0</div>
+                    <div class="stat-description">Platform transaction value</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Free Donations</h3>
+                        <i class="bi bi-heart stat-icon"></i>
+                    </div>
+                    <div class="stat-number" id="freeDonations">-</div>
+                    <div class="stat-description">Items donated for free (₹0)</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Active Today</h3>
+                        <i class="bi bi-clock stat-icon"></i>
+                    </div>
+                    <div class="stat-number" id="activeToday">-</div>
+                    <div class="stat-description">Users active in last 24 hours</div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Section -->
+            <div class="content-section active" style="display: block;">
+                <h3 style="color: #1e3a8a; margin-bottom: 15px;"><i class="bi bi-activity"></i> Recent Activity</h3>
+                <div id="recentActivity">
+                    <div class="loading"><i class="bi bi-arrow-clockwise"></i> Loading recent activity...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Section -->
+        <div id="users" class="content-section">
+            <h2 class="section-title"><i class="bi bi-people"></i> User Management</h2>
+            
+            <div class="search-filter-bar">
+                <input type="text" class="search-input" placeholder="Search users by name, email..." id="userSearch">
+                <select class="filter-select" id="userFilter">
+                    <option value="">All Users</option>
+                    <option value="recent">Recent Users (Last 7 days)</option>
+                    <option value="active">Active Users</option>
+                </select>
+                <button class="refresh-btn" onclick="refreshUsers()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+
+            <div id="usersTable">
+                <div class="loading"><i class="bi bi-arrow-clockwise"></i> Loading users...</div>
+            </div>
+        </div>
+
+        <!-- Products Section -->
+        <div id="products" class="content-section">
+            <h2 class="section-title"><i class="bi bi-box"></i> Product Management</h2>
+            
+            <div class="search-filter-bar">
+                <input type="text" class="search-input" placeholder="Search products by name, description..." id="productSearch">
+                <select class="filter-select" id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="electronics">Electronics</option>
+                    <option value="stationary">Stationary</option>
+                    <option value="instruments">Instruments</option>
+                </select>
+                <select class="filter-select" id="priceFilter">
+                    <option value="">All Prices</option>
+                    <option value="free">Free (₹0)</option>
+                    <option value="paid">Paid Items</option>
+                </select>
+                <button class="refresh-btn" onclick="refreshProducts()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+
+            <div id="productsTable">
+                <div class="loading"><i class="bi bi-arrow-clockwise"></i> Loading products...</div>
+            </div>
+        </div>
+
+        <!-- Sales Section -->
+        <div id="sales" class="content-section">
+            <h2 class="section-title"><i class="bi bi-graph-up"></i> Sales Management</h2>
+            
+            <div class="search-filter-bar">
+                <input type="text" class="search-input" placeholder="Search sales by product, seller, buyer..." id="salesSearch">
+                <select class="filter-select" id="salesFilter">
+                    <option value="">All Sales</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                </select>
+                <button class="refresh-btn" onclick="refreshSales()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+
+            <div id="salesTable">
+                <div class="loading"><i class="bi bi-arrow-clockwise"></i> Loading sales...</div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics" class="content-section">
+            <h2 class="section-title"><i class="bi bi-bar-chart"></i> Analytics & Reports</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Category Performance</h3>
+                        <i class="bi bi-pie-chart stat-icon"></i>
+                    </div>
+                    <div id="categoryStats">Loading...</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>User Growth</h3>
+                        <i class="bi bi-graph-up-arrow stat-icon"></i>
+                    </div>
+                    <div id="userGrowth">Loading...</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Revenue Trends</h3>
+                        <i class="bi bi-currency-exchange stat-icon"></i>
+                    </div>
+                    <div id="revenueTrends">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings" class="content-section">
+            <h2 class="section-title"><i class="bi bi-gear"></i> System Settings</h2>
+            
+            <div class="search-filter-bar">
+                <button class="refresh-btn" onclick="exportData()" style="background: #28a745;">
+                    <i class="bi bi-download"></i> Export Data
+                </button>
+                <button class="refresh-btn" onclick="clearCache()" style="background: #dc3545;">
+                    <i class="bi bi-trash"></i> Clear Cache
+                </button>
+                <button class="refresh-btn" onclick="generateReport()" style="background: #17a2b8;">
+                    <i class="bi bi-file-text"></i> Generate Report
+                </button>
+            </div>
+
+            <div class="content-section active" style="display: block;">
+                <h3 style="color: #1e3a8a; margin-bottom: 15px;"><i class="bi bi-info-circle"></i> System Information</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div style="padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #1e3a8a;">
+                        <strong>Database Status:</strong> <span id="dbStatus" style="color: #28a745;">Connected</span>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #1e3a8a;">
+                        <strong>Total Storage:</strong> <span id="storageUsed">Calculating...</span>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #1e3a8a;">
+                        <strong>Active Sessions:</strong> <span id="activeSessions">Calculating...</span>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #1e3a8a;">
+                        <strong>Last Backup:</strong> <span id="lastBackup">Never</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentSection = 'dashboard';
+        let dashboardData = {};
+
+        // Initialize admin panel
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
+        });
+
+        // Navigation functions
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName).classList.add('active');
+            event.target.classList.add('active');
+            
+            currentSection = sectionName;
+            
+            // Load section-specific data
+            switch(sectionName) {
+                case 'users':
+                    loadUsers();
+                    break;
+                case 'products':
+                    loadProducts();
+                    break;
+                case 'sales':
+                    loadSales();
+                    break;
+                case 'analytics':
+                    loadAnalytics();
+                    break;
+            }
+        }
+
+        // Dashboard data loading
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/admin/dashboard');
+                const data = await response.json();
+                
+                if (data.success) {
+                    dashboardData = data.data;
+                    updateDashboardStats(data.data);
+                    updateRecentActivity(data.data.recentActivity);
+                } else {
+                    console.error('Dashboard data error:', data.message);
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                // Show error in stats
+                document.getElementById('totalUsers').textContent = 'Error';
+                document.getElementById('totalProducts').textContent = 'Error';
+                document.getElementById('productsSold').textContent = 'Error';
+                document.getElementById('totalRevenue').textContent = 'Error';
+                document.getElementById('freeDonations').textContent = 'Error';
+                document.getElementById('activeToday').textContent = 'Error';
+            }
+        }
+
+        function updateDashboardStats(data) {
+            document.getElementById('totalUsers').textContent = data.totalUsers || 0;
+            document.getElementById('totalProducts').textContent = data.totalProducts || 0;
+            document.getElementById('productsSold').textContent = data.productsSold || 0;
+            document.getElementById('totalRevenue').textContent = `₹${(data.totalRevenue || 0).toLocaleString()}`;
+            document.getElementById('freeDonations').textContent = data.freeDonations || 0;
+            document.getElementById('activeToday').textContent = data.activeToday || 0;
+        }
+
+        function updateRecentActivity(activities) {
+            const container = document.getElementById('recentActivity');
+            if (!activities || activities.length === 0) {
+                container.innerHTML = '<div class="no-data"><i class="bi bi-info-circle"></i> No recent activity found</div>';
+                return;
+            }
+
+            const activityHtml = activities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-icon"></div>
+                    <div class="activity-text">${activity.message}</div>
+                    <div class="activity-time">${new Date(activity.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+
+            container.innerHTML = activityHtml;
+        }
+
+        // Users management
+        async function loadUsers() {
+            document.getElementById('usersTable').innerHTML = '<div class="loading"><i class="bi bi-arrow-clockwise"></i> Loading users...</div>';
+            
+            try {
+                const response = await fetch('/api/admin/users');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayUsersTable(data.users);
+                } else {
+                    document.getElementById('usersTable').innerHTML = `<div class="no-data"><i class="bi bi-exclamation-circle"></i> Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('usersTable').innerHTML = '<div class="no-data"><i class="bi bi-exclamation-circle"></i> Error loading users</div>';
+            }
+        }
+
+        function displayUsersTable(users) {
+            if (!users || users.length === 0) {
+                document.getElementById('usersTable').innerHTML = '<div class="no-data"><i class="bi bi-info-circle"></i> No users found</div>';
+                return;
+            }
+
+            const tableHtml = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Location</th>
+                            <th>Joined</th>
+                            <th>Products Listed</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td><strong>#${user.id}</strong></td>
+                                <td><strong>${user.username}</strong></td>
+                                <td>${user.email}</td>
+                                <td>${user.phone || 'N/A'}</td>
+                                <td>${user.location || 'N/A'}</td>
+                                <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                                <td><span style="background:#e3f2fd;padding:4px 8px;border-radius:12px;font-size:0.8rem;font-weight:bold;color:#1976d2;">${user.product_count || 0}</span></td>
+                                <td>
+                                    <button class="action-btn edit" onclick="editUser(${user.id})" title="Edit User">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="action-btn delete" onclick="deleteUser(${user.id})" title="Delete User">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('usersTable').innerHTML = tableHtml;
+        }
+
+        // Products management
+        async function loadProducts() {
+            document.getElementById('productsTable').innerHTML = '<div class="loading"><i class="bi bi-arrow-clockwise"></i> Loading products...</div>';
+            
+            try {
+                const response = await fetch('/api/admin/products');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayProductsTable(data.products);
+                } else {
+                    document.getElementById('productsTable').innerHTML = `<div class="no-data"><i class="bi bi-exclamation-circle"></i> Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('productsTable').innerHTML = '<div class="no-data"><i class="bi bi-exclamation-circle"></i> Error loading products</div>';
+            }
+        }
+
+        function displayProductsTable(products) {
+            if (!products || products.length === 0) {
+                document.getElementById('productsTable').innerHTML = '<div class="no-data"><i class="bi bi-info-circle"></i> No products found</div>';
+                return;
+            }
+
+            const tableHtml = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Product Details</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Condition</th>
+                            <th>Owner</th>
+                            <th>Listed Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${products.map(product => `
+                            <tr>
+                                <td>
+                                    ${product.image1 ? 
+                                        `<img src="${product.image1}" class="product-image" alt="${product.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                         <div class="no-image" style="display:none;">No Image</div>` : 
+                                        '<div class="no-image">No Image</div>'
+                                    }
+                                </td>
+                                <td>
+                                    <div style="font-weight:bold;color:#1e3a8a;margin-bottom:4px;">${product.name}</div>
+                                    <div style="font-size:0.8rem;color:#666;line-height:1.3;">${product.description ? (product.description.length > 50 ? product.description.substring(0, 50) + '...' : product.description) : 'No description'}</div>
+                                </td>
+                                <td><span style="background:#f3e5f5;color:#7b1fa2;padding:4px 8px;border-radius:12px;font-size:0.8rem;font-weight:bold;">${product.category}</span></td>
+                                <td><strong style="color:#2e7d32;">₹${product.price}</strong></td>
+                                <td><span style="background:#e8f5e8;color:#2e7d32;padding:4px 8px;border-radius:12px;font-size:0.8rem;">${product.condition_item}</span></td>
+                                <td><strong>${product.username}</strong></td>
+                                <td>${new Date(product.created_at).toLocaleDateString()}</td>
+                                <td>
+                                    <span class="status-badge ${product.is_sold ? 'status-sold' : 'status-active'}">
+                                        ${product.is_sold ? 'Sold' : 'Active'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="action-btn edit" onclick="editProduct(${product.product_id})" title="Edit Product">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="action-btn delete" onclick="deleteProduct(${product.product_id})" title="Delete Product">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('productsTable').innerHTML = tableHtml;
+        }
+
+        // Sales management
+        async function loadSales() {
+            document.getElementById('salesTable').innerHTML = '<div class="loading"><i class="bi bi-arrow-clockwise"></i> Loading sales...</div>';
+            
+            try {
+                const response = await fetch('/api/admin/sales');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displaySalesTable(data.sales);
+                } else {
+                    document.getElementById('salesTable').innerHTML = `<div class="no-data"><i class="bi bi-exclamation-circle"></i> Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Error loading sales:', error);
+                document.getElementById('salesTable').innerHTML = '<div class="no-data"><i class="bi bi-exclamation-circle"></i> Error loading sales</div>';
+            }
+        }
+
+        function displaySalesTable(sales) {
+            if (!sales || sales.length === 0) {
+                document.getElementById('salesTable').innerHTML = '<div class="no-data"><i class="bi bi-info-circle"></i> No sales found</div>';
+                return;
+            }
+
+            const tableHtml = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Sale ID</th>
+                            <th>Product</th>
+                            <th>Seller</th>
+                            <th>Buyer</th>
+                            <th>Sale Price</th>
+                            <th>Sale Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sales.map(sale => `
+                            <tr>
+                                <td><strong style="color:#1e3a8a;">#${sale.id}</strong></td>
+                                <td><strong>${sale.product_name}</strong></td>
+                                <td>${sale.seller_name}</td>
+                                <td>${sale.buyer_name}</td>
+                                <td><strong style="color:#2e7d32;">₹${sale.sale_price}</strong></td>
+                                <td>${new Date(sale.sold_at).toLocaleDateString()}</td>
+                                <td>
+                                    <button class="action-btn view" onclick="viewSaleDetails(${sale.id})" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('salesTable').innerHTML = tableHtml;
+        }
+
+        // Analytics
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/api/admin/analytics');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateAnalytics(data.analytics);
+                } else {
+                    console.error('Analytics error:', data.message);
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        function updateAnalytics(analytics) {
+            // Category Stats
+            const categoryStatsHtml = Object.entries(analytics.categoryStats || {})
+                .map(([category, count]) => `
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
+                        <span style="font-weight:bold;color:#1e3a8a;">${category}</span>
+                        <span style="background:#e3f2fd;padding:2px 8px;border-radius:12px;font-size:0.8rem;font-weight:bold;color:#1976d2;">${count}</span>
+                    </div>
+                `).join('');
+            
+            document.getElementById('categoryStats').innerHTML = categoryStatsHtml || '<div style="color:#999;">No data available</div>';
+            
+            // User Growth
+            document.getElementById('userGrowth').innerHTML = `
+                <div style="font-size:1.8rem;font-weight:bold;color:#2e7d32;">+${analytics.newUsersThisMonth || 0}</div>
+                <div style="color:#666;font-size:0.9rem;">New users this month</div>
+            `;
+            
+            // Revenue Trends
+            document.getElementById('revenueTrends').innerHTML = `
+                <div style="font-size:1.8rem;font-weight:bold;color:#1e3a8a;">₹${(analytics.revenueThisMonth || 0).toLocaleString()}</div>
+                <div style="color:#666;font-size:0.9rem;">Revenue this month</div>
+            `;
+        }
+
+        // Action functions
+        async function deleteProduct(productId) {
+            if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/products/${productId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('Product deleted successfully!');
+                    loadProducts();
+                    loadDashboardData(); // Refresh dashboard stats
+                } else {
+                    alert('Error deleting product: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                alert('Error deleting product. Please try again.');
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user? This will also delete all their products and sales data. This action cannot be undone.')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('User deleted successfully!');
+                    loadUsers();
+                    loadDashboardData();
+                } else {
+                    alert('Error deleting user: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                alert('Error deleting user. Please try again.');
+            }
+        }
+
+        function editProduct(productId) {
+            alert(`Edit product functionality for Product ID: ${productId}\nThis feature will be implemented in the next update.`);
+        }
+
+        function editUser(userId) {
+            alert(`Edit user functionality for User ID: ${userId}\nThis feature will be implemented in the next update.`);
+        }
+
+        function viewSaleDetails(saleId) {
+            alert(`View sale details for Sale ID: ${saleId}\nThis feature will be implemented in the next update.`);
+        }
+
+        // Refresh functions
+        function refreshUsers() {
+            loadUsers();
+        }
+
+        function refreshProducts() {
+            loadProducts();
+        }
+
+        function refreshSales() {
+            loadSales();
+        }
+
+        // Utility functions
+        async function exportData() {
+            try {
+                window.open('/api/admin/export', '_blank');
+            } catch (error) {
+                alert('Error exporting data. Please try again.');
+            }
+        }
+
+        async function clearCache() {
+            if (confirm('Are you sure you want to clear the system cache?')) {
+                try {
+                    const response = await fetch('/api/admin/clear-cache', { method: 'POST' });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Cache cleared successfully!');
+                    } else {
+                        alert('Error clearing cache: ' + data.message);
+                    }
+                } catch (error) {
+                    alert('Error clearing cache. Please try again.');
+                }
+            }
+        }
+
+        async function generateReport() {
+            try {
+                window.open('/api/admin/report', '_blank');
+            } catch (error) {
+                alert('Error generating report. Please try again.');
+            }
+        }
+
+        // Logout function
+        async function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                try {
+                    const response = await fetch('/admin-logout', {
+                        method: 'POST'
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        window.location.href = '/admin-login';
+                    } else {
+                        alert('Logout failed. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    alert('Logout failed. Please try again.');
+                }
+            }
+        }
+
+        // Search functionality (basic implementation)
+        document.getElementById('userSearch')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#usersTable tbody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        document.getElementById('productSearch')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#productsTable tbody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        document.getElementById('salesSearch')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#salesTable tbody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

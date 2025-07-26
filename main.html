@@ -331,7 +331,7 @@
                     All Items
                 </button>
                 
-                <button class="category-btn" onclick="filterCategory('textbook', this)">
+                <button class="category-btn" onclick="filterCategory('textbooks', this)">
                     <i class="bi bi-book category-icon"></i>
                     Textbooks
                 </button>
@@ -341,14 +341,9 @@
                     Calculators
                 </button>
                 
-                <button class="category-btn" onclick="filterCategory('electronic', this)">
+                <button class="category-btn" onclick="filterCategory('hardware', this)">
                     <i class="bi bi-motherboard category-icon"></i>
                     Electronics
-                </button>
-                
-                <button class="category-btn" onclick="filterCategory('lab', this)">
-                    <i class="fa-solid fa-shirt category-icon"></i>
-                    Lab Coats
                 </button>
                 
                 <button class="category-btn" onclick="filterCategory('software', this)">
@@ -356,14 +351,19 @@
                     Software
                 </button>
                 
-                <button class="category-btn" onclick="filterCategory('stationery', this)">
+                <button class="category-btn" onclick="filterCategory('drafting-items', this)">
                     <i class="bi bi-pencil category-icon"></i>
                     Stationery
                 </button>
                 
-                <button class="category-btn" onclick="filterCategory('instrument', this)">
-                    <i class="bi bi-tools category-icon"></i>
-                    Instruments
+                <button class="category-btn" onclick="filterCategory('study-materials', this)">
+                    <i class="bi bi-journal-bookmark category-icon"></i>
+                    Study Materials
+                </button>
+                
+                <button class="category-btn" onclick="filterCategory('other', this)">
+                    <i class="bi bi-box category-icon"></i>
+                    Other
                 </button>
             </div>
         </div>
@@ -410,24 +410,30 @@
         // Get category icon
         function getCategoryIcon(category) {
             const categoryIcons = {
-                'textbook': 'bi-book',
+                'textbooks': 'bi-book',
                 'calculator': 'bi-calculator',
-                'electronic': 'bi-motherboard',
-                'lab': 'bi-flask',
+                'hardware': 'bi-motherboard',
                 'software': 'bi-laptop',
-                'stationery': 'bi-pencil',
-                'instrument': 'bi-tools',
-                'hardware': 'bi-cpu',
-                'drafting': 'bi-rulers',
+                'drafting-items': 'bi-pencil',
+                'study-materials': 'bi-journal-bookmark',
+                'other': 'bi-box',
                 'default': 'bi-box'
             };
             
             const lowerCategory = category?.toLowerCase() || '';
+            
+            // Direct match first
+            if (categoryIcons[lowerCategory]) {
+                return categoryIcons[lowerCategory];
+            }
+            
+            // Partial matches for compatibility
             for (const [key, icon] of Object.entries(categoryIcons)) {
                 if (lowerCategory.includes(key) || key.includes(lowerCategory)) {
                     return icon;
                 }
             }
+            
             return categoryIcons.default;
         }
 
@@ -531,8 +537,26 @@
                 const productCategory = product.category?.toLowerCase() || '';
                 const filterCategory = currentCategory.toLowerCase();
                 
-                // Check for exact match or partial match
-                return productCategory.includes(filterCategory) || filterCategory.includes(productCategory);
+                // Direct match for exact categories
+                if (productCategory === filterCategory) {
+                    return true;
+                }
+                
+                // Handle special cases for partial matches
+                if (filterCategory === 'textbooks' && productCategory.includes('textbook')) {
+                    return true;
+                }
+                if (filterCategory === 'drafting-items' && (productCategory.includes('drafting') || productCategory.includes('stationary'))) {
+                    return true;
+                }
+                if (filterCategory === 'hardware' && (productCategory.includes('hardware') || productCategory.includes('electronic'))) {
+                    return true;
+                }
+                if (filterCategory === 'study-materials' && (productCategory.includes('study') || productCategory.includes('material'))) {
+                    return true;
+                }
+                
+                return false;
             });
         }
 
@@ -546,7 +570,27 @@
                     const category = categoryMatch[1];
                     const hasProducts = allProducts.some(product => {
                         const productCategory = product.category?.toLowerCase() || '';
-                        return productCategory.includes(category) || category.includes(productCategory);
+                        
+                        // Direct match
+                        if (productCategory === category.toLowerCase()) {
+                            return true;
+                        }
+                        
+                        // Handle special cases
+                        if (category === 'textbooks' && productCategory.includes('textbook')) {
+                            return true;
+                        }
+                        if (category === 'drafting-items' && (productCategory.includes('drafting') || productCategory.includes('stationary'))) {
+                            return true;
+                        }
+                        if (category === 'hardware' && (productCategory.includes('hardware') || productCategory.includes('electronic'))) {
+                            return true;
+                        }
+                        if (category === 'study-materials' && (productCategory.includes('study') || productCategory.includes('material'))) {
+                            return true;
+                        }
+                        
+                        return false;
                     });
                     
                     // Disable button if no products in category
@@ -592,13 +636,13 @@
             const sectionTitle = document.querySelector('.section-title');
             const categoryNames = {
                 'all': 'All Available Products',
-                'textbook': 'Textbooks & Study Materials',
+                'textbooks': 'Textbooks & Academic Books',
                 'calculator': 'Calculators & Computing Tools',
-                'electronic': 'Electronics & Gadgets',
-                'lab': 'Lab Equipment & Instruments',
+                'hardware': 'Electronics & Hardware',
                 'software': 'Software & Digital Tools',
-                'stationery': 'Stationery & Supplies',
-                'instrument': 'Instruments & Tools'
+                'drafting-items': 'Stationery & Drafting Items',
+                'study-materials': 'Study Materials & Resources',
+                'other': 'Other Items'
             };
             sectionTitle.textContent = categoryNames[category] || 'Featured Products';
         }

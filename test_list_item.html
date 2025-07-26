@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test List Item</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Test List Item Functionality</h1>
+    
+    <div class="test-section">
+        <h2>Form Test</h2>
+        <form id="testForm">
+            <input type="text" name="itemName" placeholder="Item Name" required>
+            <select name="category" required>
+                <option value="">Select Category</option>
+                <option value="textbooks">Textbooks</option>
+            </select>
+            <select name="condition" required>
+                <option value="">Select Condition</option>
+                <option value="Good">Good</option>
+            </select>
+            <textarea name="description" placeholder="Description" required></textarea>
+            <input type="radio" name="saleType" value="donation" id="donation">
+            <label for="donation">Donation</label>
+            <input type="radio" name="saleType" value="discounted" id="discounted">
+            <label for="discounted">Discounted</label>
+            <button type="submit">Test Submit</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            console.log('Form data:', {
+                itemName: formData.get('itemName'),
+                category: formData.get('category'),
+                condition: formData.get('condition'),
+                description: formData.get('description'),
+                saleType: formData.get('saleType')
+            });
+            alert('Form submitted successfully! Check console for data.');
+        });
+    </script>
+</body>
+</html>

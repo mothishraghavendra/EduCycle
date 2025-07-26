@@ -40,6 +40,12 @@ const config = {
         version: process.env.APP_VERSION || '1.0.0'
     },
 
+    // Admin Configuration
+    admin: {
+        username: process.env.ADMIN_USERNAME || 'admin',
+        password: process.env.ADMIN_PASSWORD || 'admin123'
+    },
+
     // Feature Flags
     features: {
         enableLogging: process.env.ENABLE_LOGGING !== 'false',

@@ -14,11 +14,15 @@
             background-color: #f8f9fa;
             color: #333;
             margin: 0;
-            padding: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
         }
         .signin-container {
             width: 300px;
-            margin: 100px auto;
             padding: 20px;
             background-color: #fff;
             border-radius: 8px;
@@ -34,11 +38,25 @@
             position: relative;
             margin-bottom: 15px;
         }
-        .input-group input {
-            width: calc(100% - 45px);
+        .input-group input, .input-group select{
+            width: 100%;
             padding: 10px 10px 10px 35px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            background-color: white;
+            font-size: 14px;
+            font-family: 'Segoe UI', sans-serif;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        .input-group select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23666' d='M8 11L3 6h10l-5 5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+            padding-right: 35px;
         }
         .input-group i {
             position: absolute;
@@ -76,12 +94,15 @@
             background-color: #429a85;
         }
         @media (max-width: 600px) {
-            .signin-container {
-                width: 80%;
-                margin: 150px auto;
+            body {
+                padding: 10px;
             }
-            .input-group input {
-                width: calc(100% - 40px);
+            .signin-container {
+                width: 90%;
+                max-width: 300px;
+            }
+            .input-group input, .input-group select {
+                width: 100%;
             }
         }
     </style>
@@ -107,7 +128,46 @@
             </div>
             <div class="input-group">
                 <i class="bi bi-geo-alt"></i>
-                <input type="text" name="location" placeholder="Location" required>
+                <select name="location" required>
+                    <option value="">Select Location</option>
+                    <option value="Amalapuram">Amalapuram</option>
+                    <option value="Anakapalle">Anakapalle</option>
+                    <option value="Anantapur">Anantapur</option>
+                    <option value="Bapatla">Bapatla</option>
+                    <option value="Bheemunipatnam">Bheemunipatnam</option>
+                    <option value="Bhimavaram">Bhimavaram</option>
+                    <option value="Chittoor">Chittoor</option>
+                    <option value="Chirala">Chirala</option>
+                    <option value="Eluru">Eluru</option>
+                    <option value="Gudivada">Gudivada</option>
+                    <option value="Gudur">Gudur</option>
+                    <option value="Hindupur">Hindupur</option>
+                    <option value="Kakinada">Kakinada</option>
+                    <option value="Kavali">Kavali</option>
+                    <option value="Kurnool">Kurnool</option>
+                    <option value="Madanapalle">Madanapalle</option>
+                    <option value="Machilipatnam">Machilipatnam</option>
+                    <option value="Markapur">Markapur</option>
+                    <option value="Nandyal">Nandyal</option>
+                    <option value="Narasaraopet">Narasaraopet</option>
+                    <option value="Nellore">Nellore</option>
+                    <option value="Nidadavolu">Nidadavolu</option>
+                    <option value="Ongole">Ongole</option>
+                    <option value="Puttur">Puttur</option>
+                    <option value="Rajahmundry (Rajamahendravaram)">Rajahmundry (Rajamahendravaram)</option>
+                    <option value="Rajampet">Rajampet</option>
+                    <option value="Srikakulam">Srikakulam</option>
+                    <option value="Srikalahasti">Srikalahasti</option>
+                    <option value="Tadipatri">Tadipatri</option>
+                    <option value="Tadepalligudem">Tadepalligudem</option>
+                    <option value="Tanuku">Tanuku</option>
+                    <option value="Tenali">Tenali</option>
+                    <option value="Tirupati">Tirupati</option>
+                    <option value="Tekkali">Tekkali</option>
+                    <option value="Vijayawada">Vijayawada</option>
+                    <option value="Visakhapatnam">Visakhapatnam</option>
+                    <option value="Vizianagaram">Vizianagaram</option>
+                </select>
             </div>
             <p style="text-align: center;">already have an account? <a href="login.html">Login</a></p>
             <button type="submit">Sign Up</button>
