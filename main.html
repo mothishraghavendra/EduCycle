@@ -388,6 +388,20 @@
         let allProducts = [];
         let currentCategory = 'all';
 
+        // Escape HTML and JavaScript special characters
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/\\/g, "\\\\")
+                .replace(/\n/g, "\\n")
+                .replace(/\r/g, "\\r");
+        }
+
         // Format currency
         function formatPrice(price) {
             return new Intl.NumberFormat('en-IN', {
@@ -475,7 +489,7 @@
                             <i class="bi bi-cart-plus"></i> Add to Cart
                         </button>
                         ${hasValidPhone ? 
-                            `<button class="contact-seller-btn" onclick="contactSeller('${product.seller_name}', '${product.name}', '${product.seller_phone}')">
+                            `<button class="contact-seller-btn" onclick="contactSeller('${escapeHtml(product.seller_name || '')}', '${escapeHtml(product.name || '')}', '${escapeHtml(product.seller_phone || '')}')">
                                 <i class="bi bi-whatsapp"></i> Contact Seller
                             </button>` :
                             `<button class="contact-seller-btn" disabled style="background-color: #ccc; cursor: not-allowed; opacity: 0.6;" title="Contact not available">
@@ -685,13 +699,18 @@
         function contactSeller(sellerName, productName, sellerPhone) {
             console.log('Contacting seller:', { sellerName, productName, sellerPhone });
             
-            if (!sellerPhone || sellerPhone.trim() === '') {
+            // Clean and validate input data
+            const cleanSellerName = (sellerName || 'Seller').trim();
+            const cleanProductName = (productName || 'Product').trim();
+            const cleanSellerPhone = (sellerPhone || '').trim();
+            
+            if (!cleanSellerPhone || cleanSellerPhone === '') {
                 alert('Seller phone number not available. Please try adding to cart to get seller contact.');
                 return;
             }
             
             // Clean and format phone number (remove any non-digits and ensure it starts with country code)
-            let phoneNumber = sellerPhone.replace(/\D/g, ''); // Remove all non-digits
+            let phoneNumber = cleanSellerPhone.replace(/\D/g, ''); // Remove all non-digits
             
             // If phone number doesn't start with country code, assume it's Indian (+91)
             if (phoneNumber.length === 10) {
@@ -701,11 +720,17 @@
                 phoneNumber = '91' + phoneNumber.substring(1);
             }
             
-            // Create a detailed message
-            const message = `🎓 Hi ${sellerName}! 
+            // Validate phone number length
+            if (phoneNumber.length < 10) {
+                alert('Invalid phone number. Please contact support.');
+                return;
+            }
+            
+            // Create a detailed message with clean data
+            const message = `🎓 Hi ${cleanSellerName}! 
 
 I found your product on Educycle and I'm interested in:
-📚 *${productName}*
+📚 *${cleanProductName}*
 
 Could you please provide more details about:
 • Current condition & actual photos
@@ -721,6 +746,7 @@ Thanks! 😊
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
             
             console.log('Opening WhatsApp URL:', whatsappUrl);
+            console.log('Message preview:', message);
             window.open(whatsappUrl, '_blank');
         }
 

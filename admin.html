@@ -461,6 +461,71 @@
             color: #999;
         }
 
+        /* Notification System */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1001;
+            min-width: 300px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.success {
+            background: #28a745;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        .notification.info {
+            background: #17a2b8;
+        }
+
+        .notification.warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .notification.slide-in {
+            animation: slideInRight 0.3s ease;
+        }
+
+        .notification.slide-out {
+            animation: slideOutRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .admin-header-top {
@@ -640,6 +705,7 @@
                     <option value="electronics">Electronics</option>
                     <option value="stationary">Stationary</option>
                     <option value="instruments">Instruments</option>
+                    <option value="study-materials">Study Materials</option>
                 </select>
                 <select class="filter-select" id="priceFilter">
                     <option value="">All Prices</option>
@@ -714,6 +780,9 @@
             <h2 class="section-title"><i class="bi bi-gear"></i> System Settings</h2>
             
             <div class="search-filter-bar">
+                <button class="refresh-btn" onclick="loadSystemInfo()" style="background: #2563eb;">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh System Info
+                </button>
                 <button class="refresh-btn" onclick="exportData()" style="background: #28a745;">
                     <i class="bi bi-download"></i> Export Data
                 </button>
@@ -750,10 +819,43 @@
         let currentSection = 'dashboard';
         let dashboardData = {};
 
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type} slide-in`;
+            
+            const icon = {
+                success: 'bi-check-circle',
+                error: 'bi-exclamation-circle',
+                info: 'bi-info-circle',
+                warning: 'bi-exclamation-triangle'
+            }[type] || 'bi-info-circle';
+            
+            notification.innerHTML = `
+                <i class="bi ${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('slide-in');
+                notification.classList.add('slide-out');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
         // Initialize admin panel
         document.addEventListener('DOMContentLoaded', function() {
             loadDashboardData();
+            loadSystemInfo(); // Load system info on page load
             setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
+            setInterval(loadSystemInfo, 60000); // Refresh system info every minute
         });
 
         // Navigation functions
@@ -787,6 +889,9 @@
                     break;
                 case 'analytics':
                     loadAnalytics();
+                    break;
+                case 'settings':
+                    loadSystemInfo();
                     break;
             }
         }
@@ -963,7 +1068,7 @@
                                     <div style="font-weight:bold;color:#1e3a8a;margin-bottom:4px;">${product.name}</div>
                                     <div style="font-size:0.8rem;color:#666;line-height:1.3;">${product.description ? (product.description.length > 50 ? product.description.substring(0, 50) + '...' : product.description) : 'No description'}</div>
                                 </td>
-                                <td><span style="background:#f3e5f5;color:#7b1fa2;padding:4px 8px;border-radius:12px;font-size:0.8rem;font-weight:bold;">${product.category}</span></td>
+                                <td><span style="background:#f3e5f5;color:#7b1fa2;padding:4px 8px;border-radius:12px;font-size:0.8rem;font-weight:bold;white-space:nowrap;">${product.category.replace(/-/g, ' ')}</span></td>
                                 <td><strong style="color:#2e7d32;">₹${product.price}</strong></td>
                                 <td><span style="background:#e8f5e8;color:#2e7d32;padding:4px 8px;border-radius:12px;font-size:0.8rem;">${product.condition_item}</span></td>
                                 <td><strong>${product.username}</strong></td>
@@ -974,9 +1079,6 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <button class="action-btn edit" onclick="editProduct(${product.product_id})" title="Edit Product">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
                                     <button class="action-btn delete" onclick="deleteProduct(${product.product_id})" title="Delete Product">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -1092,57 +1194,495 @@
             `;
         }
 
+        // System Info
+        async function loadSystemInfo() {
+            try {
+                const response = await fetch('/api/admin/system-info');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateSystemInfo(data.systemInfo);
+                } else {
+                    console.error('System info error:', data.message);
+                    showErrorSystemInfo();
+                }
+            } catch (error) {
+                console.error('Error loading system info:', error);
+                showErrorSystemInfo();
+            }
+        }
+
+        function updateSystemInfo(systemInfo) {
+            // Database Status
+            document.getElementById('dbStatus').innerHTML = `
+                <span style="color: #28a745;">Connected</span>
+                <small style="display:block;color:#666;font-size:0.8rem;">${systemInfo.database.version}</small>
+            `;
+            
+            // Total Storage
+            document.getElementById('storageUsed').innerHTML = `
+                <span style="font-weight:bold;color:#1e3a8a;">${systemInfo.database.totalStorageMB} MB</span>
+                <small style="display:block;color:#666;font-size:0.8rem;">${systemInfo.database.totalTables} tables</small>
+            `;
+            
+            // Active Sessions
+            document.getElementById('activeSessions').innerHTML = `
+                <span style="font-weight:bold;color:#2e7d32;">${systemInfo.sessions.activeCount}</span>
+                <small style="display:block;color:#666;font-size:0.8rem;">Last hour activity</small>
+            `;
+            
+            // Last Backup
+            const backupDate = new Date(systemInfo.backup.lastBackup);
+            document.getElementById('lastBackup').innerHTML = `
+                <span style="font-weight:bold;color:#1976d2;">${backupDate.toLocaleDateString()}</span>
+                <small style="display:block;color:#666;font-size:0.8rem;">${backupDate.toLocaleTimeString()}</small>
+            `;
+
+            // Add detailed system information section
+            updateDetailedSystemInfo(systemInfo);
+        }
+
+        function updateDetailedSystemInfo(systemInfo) {
+            // Find or create detailed info section
+            let detailedSection = document.getElementById('detailedSystemInfo');
+            if (!detailedSection) {
+                const settingsSection = document.getElementById('settings');
+                const systemInfoGrid = settingsSection.querySelector('.content-section');
+                
+                const detailedHtml = `
+                    <div id="detailedSystemInfo" style="margin-top: 30px;">
+                        <h3 style="color: #1e3a8a; margin-bottom: 20px;"><i class="bi bi-server"></i> Detailed System Information</h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                <h4 style="color: #1e3a8a; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="bi bi-database"></i> Database Statistics
+                                </h4>
+                                <div id="databaseStats"></div>
+                            </div>
+                            
+                            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                <h4 style="color: #1e3a8a; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="bi bi-cpu"></i> Server Performance
+                                </h4>
+                                <div id="serverStats"></div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <h4 style="color: #1e3a8a; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-table"></i> Top Database Tables
+                            </h4>
+                            <div id="tableStats"></div>
+                        </div>
+                    </div>
+                `;
+                
+                systemInfoGrid.insertAdjacentHTML('beforeend', detailedHtml);
+            }
+
+            // Update database stats
+            const databaseStatsHtml = `
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: bold;">Total Storage:</span> 
+                    <span style="color: #1e3a8a;">${systemInfo.database.totalStorageMB} MB</span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: bold;">Total Tables:</span> 
+                    <span style="color: #1e3a8a;">${systemInfo.database.totalTables}</span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: bold;">Database Version:</span> 
+                    <span style="color: #666; font-size: 0.9rem;">${systemInfo.database.version}</span>
+                </div>
+            `;
+            document.getElementById('databaseStats').innerHTML = databaseStatsHtml;
+
+            // Update server stats
+            const uptimeHours = Math.floor(systemInfo.server.uptime / 3600);
+            const uptimeMinutes = Math.floor((systemInfo.server.uptime % 3600) / 60);
+            
+            const serverStatsHtml = `
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: bold;">Uptime:</span> 
+                    <span style="color: #2e7d32;">${uptimeHours}h ${uptimeMinutes}m</span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: bold;">Memory Usage:</span> 
+                    <span style="color: #1e3a8a;">${systemInfo.server.memory.used}MB / ${systemInfo.server.memory.total}MB</span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: bold;">Node.js:</span> 
+                    <span style="color: #666; font-size: 0.9rem;">${systemInfo.server.nodeVersion}</span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-weight: bold;">Platform:</span> 
+                    <span style="color: #666; font-size: 0.9rem;">${systemInfo.server.platform}</span>
+                </div>
+            `;
+            document.getElementById('serverStats').innerHTML = serverStatsHtml;
+
+            // Update table stats
+            const tableStatsHtml = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #dee2e6;">Table Name</th>
+                                <th style="padding: 10px; text-align: right; border-bottom: 1px solid #dee2e6;">Rows</th>
+                                <th style="padding: 10px; text-align: right; border-bottom: 1px solid #dee2e6;">Size (MB)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${systemInfo.database.tableStats.map(table => `
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #f0f0f0; font-weight: bold; color: #1e3a8a;">${table.table_name}</td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #f0f0f0; text-align: right;">${(table.row_count || 0).toLocaleString()}</td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #f0f0f0; text-align: right; color: #2e7d32;">${table.size_mb || '0.00'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            document.getElementById('tableStats').innerHTML = tableStatsHtml;
+        }
+
+        function showErrorSystemInfo() {
+            document.getElementById('dbStatus').innerHTML = '<span style="color: #dc3545;">Error</span>';
+            document.getElementById('storageUsed').innerHTML = '<span style="color: #dc3545;">Error</span>';
+            document.getElementById('activeSessions').innerHTML = '<span style="color: #dc3545;">Error</span>';
+            document.getElementById('lastBackup').innerHTML = '<span style="color: #dc3545;">Error</span>';
+        }
+
         // Action functions
         async function deleteProduct(productId) {
-            if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
+            // Get product details for confirmation
+            const productRow = document.querySelector(`button[onclick="deleteProduct(${productId})"]`).closest('tr');
+            const productName = productRow.cells[1].querySelector('div').textContent;
+            const ownerName = productRow.cells[5].textContent;
+            
+            if (!confirm(`Are you sure you want to delete the product "${productName}" by ${ownerName}?\n\nThis action cannot be undone!`)) {
+                return;
+            }
+            
+            // Show loading state
+            const deleteBtn = document.querySelector(`button[onclick="deleteProduct(${productId})"]`);
+            const originalContent = deleteBtn.innerHTML;
+            deleteBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+            deleteBtn.disabled = true;
             
             try {
                 const response = await fetch(`/api/admin/products/${productId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
                 const data = await response.json();
                 if (data.success) {
-                    alert('Product deleted successfully!');
-                    loadProducts();
-                    loadDashboardData(); // Refresh dashboard stats
+                    showNotification('Product deleted successfully!', 'success');
+                    
+                    // Remove the row with animation
+                    productRow.style.transition = 'all 0.3s ease';
+                    productRow.style.opacity = '0';
+                    productRow.style.transform = 'translateX(-100%)';
+                    
+                    setTimeout(() => {
+                        loadProducts();
+                        loadDashboardData(); // Refresh dashboard stats
+                    }, 300);
                 } else {
-                    alert('Error deleting product: ' + data.message);
+                    showNotification('Error deleting product: ' + data.message, 'error');
+                    // Restore button
+                    deleteBtn.innerHTML = originalContent;
+                    deleteBtn.disabled = false;
                 }
             } catch (error) {
                 console.error('Error deleting product:', error);
-                alert('Error deleting product. Please try again.');
+                showNotification('Network error: Unable to delete product. Please try again.', 'error');
+                // Restore button
+                deleteBtn.innerHTML = originalContent;
+                deleteBtn.disabled = false;
             }
         }
 
         async function deleteUser(userId) {
-            if (!confirm('Are you sure you want to delete this user? This will also delete all their products and sales data. This action cannot be undone.')) return;
+            // Get user details for confirmation
+            const userRow = document.querySelector(`button[onclick="deleteUser(${userId})"]`).closest('tr');
+            const username = userRow.cells[1].textContent;
+            const email = userRow.cells[2].textContent;
+            
+            if (!confirm(`Are you sure you want to delete user "${username}" (${email})?\n\nThis will permanently delete:\n• The user account\n• All their products\n• All their sales data\n• All cart items\n\nThis action cannot be undone!`)) {
+                return;
+            }
+            
+            // Show loading state
+            const deleteBtn = document.querySelector(`button[onclick="deleteUser(${userId})"]`);
+            const originalContent = deleteBtn.innerHTML;
+            deleteBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+            deleteBtn.disabled = true;
             
             try {
                 const response = await fetch(`/api/admin/users/${userId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
                 const data = await response.json();
+                
                 if (data.success) {
-                    alert('User deleted successfully!');
-                    loadUsers();
-                    loadDashboardData();
+                    // Show success message
+                    showNotification('User deleted successfully!', 'success');
+                    
+                    // Remove the row with animation
+                    userRow.style.transition = 'all 0.3s ease';
+                    userRow.style.opacity = '0';
+                    userRow.style.transform = 'translateX(-100%)';
+                    
+                    setTimeout(() => {
+                        loadUsers(); // Reload users table
+                        loadDashboardData(); // Refresh dashboard stats
+                    }, 300);
                 } else {
-                    alert('Error deleting user: ' + data.message);
+                    showNotification('Error deleting user: ' + data.message, 'error');
+                    // Restore button
+                    deleteBtn.innerHTML = originalContent;
+                    deleteBtn.disabled = false;
                 }
             } catch (error) {
                 console.error('Error deleting user:', error);
-                alert('Error deleting user. Please try again.');
+                showNotification('Network error: Unable to delete user. Please try again.', 'error');
+                // Restore button
+                deleteBtn.innerHTML = originalContent;
+                deleteBtn.disabled = false;
             }
         }
 
-        function editProduct(productId) {
-            alert(`Edit product functionality for Product ID: ${productId}\nThis feature will be implemented in the next update.`);
+        function editUser(userId) {
+            // Get current user data from the table row
+            const userRow = document.querySelector(`button[onclick="editUser(${userId})"]`).closest('tr');
+            const currentUsername = userRow.cells[1].textContent;
+            const currentEmail = userRow.cells[2].textContent;
+            const currentPhone = userRow.cells[3].textContent === 'N/A' ? '' : userRow.cells[3].textContent;
+            const currentLocation = userRow.cells[4].textContent === 'N/A' ? '' : userRow.cells[4].textContent;
+            
+            // Create edit modal
+            const modalHtml = `
+                <div id="editUserModal" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 1000;
+                ">
+                    <div style="
+                        background: white;
+                        padding: 30px;
+                        border-radius: 12px;
+                        width: 90%;
+                        max-width: 500px;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    ">
+                        <h3 style="color: #1e3a8a; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                            <i class="bi bi-person-gear"></i> Edit User
+                        </h3>
+                        
+                        <form id="editUserForm">
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Username:</label>
+                                <input type="text" id="editUsername" value="${currentUsername}" style="
+                                    width: 100%;
+                                    padding: 10px;
+                                    border: 2px solid #e0e0e0;
+                                    border-radius: 6px;
+                                    font-size: 0.95rem;
+                                    box-sizing: border-box;
+                                " required>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Email:</label>
+                                <input type="email" id="editEmail" value="${currentEmail}" style="
+                                    width: 100%;
+                                    padding: 10px;
+                                    border: 2px solid #e0e0e0;
+                                    border-radius: 6px;
+                                    font-size: 0.95rem;
+                                    background: #f5f5f5;
+                                    box-sizing: border-box;
+                                " readonly title="Email cannot be changed">
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Phone:</label>
+                                <input type="tel" id="editPhone" value="${currentPhone}" style="
+                                    width: 100%;
+                                    padding: 10px;
+                                    border: 2px solid #e0e0e0;
+                                    border-radius: 6px;
+                                    font-size: 0.95rem;
+                                    box-sizing: border-box;
+                                " placeholder="Enter phone number">
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Location:</label>
+                                <input type="text" id="editLocation" value="${currentLocation}" style="
+                                    width: 100%;
+                                    padding: 10px;
+                                    border: 2px solid #e0e0e0;
+                                    border-radius: 6px;
+                                    font-size: 0.95rem;
+                                    box-sizing: border-box;
+                                " placeholder="Enter location">
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button type="button" onclick="closeEditModal()" style="
+                                    padding: 10px 20px;
+                                    border: 2px solid #ccc;
+                                    background: white;
+                                    color: #666;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 0.95rem;
+                                ">Cancel</button>
+                                <button type="submit" style="
+                                    padding: 10px 20px;
+                                    background: #1e3a8a;
+                                    color: white;
+                                    border: none;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 0.95rem;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 5px;
+                                ">
+                                    <i class="bi bi-check-lg"></i> Update User
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Handle form submission
+            document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await updateUser(userId);
+            });
+            
+            // Close modal on outside click
+            document.getElementById('editUserModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeEditModal();
+                }
+            });
+
+            // Close modal on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && document.getElementById('editUserModal')) {
+                    closeEditModal();
+                }
+            });
+
+            // Focus on first input
+            setTimeout(() => {
+                document.getElementById('editUsername').focus();
+            }, 100);
         }
 
-        function editUser(userId) {
-            alert(`Edit user functionality for User ID: ${userId}\nThis feature will be implemented in the next update.`);
+        function closeEditModal() {
+            const modal = document.getElementById('editUserModal');
+            if (modal) {
+                // Check for unsaved changes
+                const form = document.getElementById('editUserForm');
+                if (form) {
+                    const hasChanges = 
+                        document.getElementById('editUsername').value !== document.getElementById('editUsername').defaultValue ||
+                        document.getElementById('editPhone').value !== document.getElementById('editPhone').defaultValue ||
+                        document.getElementById('editLocation').value !== document.getElementById('editLocation').defaultValue;
+                    
+                    if (hasChanges && !confirm('You have unsaved changes. Are you sure you want to close?')) {
+                        return;
+                    }
+                }
+                
+                modal.style.opacity = '0';
+                modal.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => {
+                    if (modal.parentNode) {
+                        modal.remove();
+                        
+                        // Remove escape key listener
+                        document.removeEventListener('keydown', arguments.callee);
+                    }
+                }, 300);
+            }
+        }
+
+        async function updateUser(userId) {
+            const username = document.getElementById('editUsername').value.trim();
+            const phone = document.getElementById('editPhone').value.trim();
+            const location = document.getElementById('editLocation').value.trim();
+            
+            // Validation
+            if (!username) {
+                showNotification('Username is required!', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = document.querySelector('#editUserForm button[type="submit"]');
+            const originalContent = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Updating...';
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        phone: phone || null,
+                        location: location || null
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('User updated successfully!', 'success');
+                    closeEditModal();
+                    loadUsers(); // Reload users table
+                } else {
+                    showNotification('Error updating user: ' + data.message, 'error');
+                    // Restore button
+                    submitBtn.innerHTML = originalContent;
+                    submitBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error updating user:', error);
+                showNotification('Network error: Unable to update user. Please try again.', 'error');
+                // Restore button
+                submitBtn.innerHTML = originalContent;
+                submitBtn.disabled = false;
+            }
         }
 
         function viewSaleDetails(saleId) {
@@ -1165,53 +1705,72 @@
         // Utility functions
         async function exportData() {
             try {
+                showNotification('Exporting data...', 'info');
                 window.open('/api/admin/export', '_blank');
+                setTimeout(() => {
+                    showNotification('Data export initiated successfully!', 'success');
+                }, 1000);
             } catch (error) {
-                alert('Error exporting data. Please try again.');
+                showNotification('Error exporting data. Please try again.', 'error');
             }
         }
 
         async function clearCache() {
             if (confirm('Are you sure you want to clear the system cache?')) {
                 try {
+                    showNotification('Clearing cache...', 'info');
                     const response = await fetch('/api/admin/clear-cache', { method: 'POST' });
                     const data = await response.json();
                     if (data.success) {
-                        alert('Cache cleared successfully!');
+                        showNotification('Cache cleared successfully!', 'success');
                     } else {
-                        alert('Error clearing cache: ' + data.message);
+                        showNotification('Error clearing cache: ' + data.message, 'error');
                     }
                 } catch (error) {
-                    alert('Error clearing cache. Please try again.');
+                    showNotification('Error clearing cache. Please try again.', 'error');
                 }
             }
         }
 
         async function generateReport() {
             try {
+                showNotification('Generating report...', 'info');
                 window.open('/api/admin/report', '_blank');
+                setTimeout(() => {
+                    showNotification('Report generated successfully!', 'success');
+                }, 1000);
             } catch (error) {
-                alert('Error generating report. Please try again.');
+                showNotification('Error generating report. Please try again.', 'error');
             }
         }
 
         // Logout function
         async function logout() {
-            if (confirm('Are you sure you want to logout?')) {
+            if (confirm('Are you sure you want to logout from the admin panel?')) {
                 try {
+                    showNotification('Logging out...', 'info');
                     const response = await fetch('/admin-logout', {
-                        method: 'POST'
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
                     });
                     
                     const data = await response.json();
                     if (data.success) {
-                        window.location.href = '/admin-login';
+                        showNotification('Logged out successfully!', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/admin-login';
+                        }, 1000);
                     } else {
-                        alert('Logout failed. Please try again.');
+                        showNotification('Logout failed: ' + data.message, 'error');
                     }
                 } catch (error) {
                     console.error('Logout error:', error);
-                    alert('Logout failed. Please try again.');
+                    showNotification('Network error during logout. Redirecting anyway...', 'warning');
+                    setTimeout(() => {
+                        window.location.href = '/admin-login';
+                    }, 2000);
                 }
             }
         }

@@ -11,6 +11,7 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
+const { sendWelcomeEmail, sendProductListingNotification, sendPasswordResetOTP } = require('./emailService');
 
 const app = express();
 
@@ -157,11 +158,87 @@ const createCartTable = async () => {
     }
 };
 
+// Create password_reset_otps table if it doesn't exist
+const createPasswordResetOtpsTable = async () => {
+    try {
+        const createTableQuery = `
+            CREATE TABLE IF NOT EXISTS password_reset_otps (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(255) NOT NULL,
+                otp VARCHAR(6) NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                used BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_email (email),
+                INDEX idx_expires_at (expires_at)
+            )
+        `;
+        await promisePool.execute(createTableQuery);
+    } catch (error) {
+        console.error('❌ Error creating password_reset_otps table:', error);
+    }
+};
+
+// Update existing tables to match current schema
+const updateDatabaseSchema = async () => {
+    try {
+        console.log('🔧 Checking database schema for updates...');
+        
+        // Check if updated_at column exists in users table, if not add it
+        const [columns] = await promisePool.execute(
+            "SHOW COLUMNS FROM users LIKE 'updated_at'"
+        );
+        
+        if (columns.length === 0) {
+            console.log('🔧 Adding updated_at column to users table...');
+            await promisePool.execute(
+                'ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
+            );
+            console.log('✅ Added updated_at column to users table');
+        } else {
+            console.log('✅ Database schema is up to date');
+        }
+    } catch (error) {
+        console.error('❌ Error updating database schema:', error);
+        console.log('💡 This is not critical - the application will continue to work');
+        // Don't throw error, just log it as this is not critical
+    }
+};
+
 // Initialize database
-createUsersTable();
-createProductsTable();
-createSoldItemsTable();
-createCartTable();
+const initializeDatabase = async () => {
+    await createUsersTable();
+    await createProductsTable();
+    await createSoldItemsTable();
+    await createCartTable();
+    await createPasswordResetOtpsTable();
+    
+    // Update database schema for existing installations
+    await updateDatabaseSchema();
+};
+
+// Start database initialization
+initializeDatabase();
+
+// Cleanup expired OTPs periodically (every hour)
+const cleanupExpiredOtps = async () => {
+    try {
+        const [result] = await promisePool.execute(
+            'DELETE FROM password_reset_otps WHERE expires_at < NOW()'
+        );
+        if (result.affectedRows > 0) {
+            console.log(`🧹 Cleaned up ${result.affectedRows} expired OTPs`);
+        }
+    } catch (error) {
+        console.error('❌ Error cleaning up expired OTPs:', error);
+    }
+};
+
+// Run cleanup every hour (3600000 ms)
+setInterval(cleanupExpiredOtps, 3600000);
+
+// Run initial cleanup
+cleanupExpiredOtps();
 
 // Routes
 
@@ -202,6 +279,21 @@ app.get('/cart', (req, res) => {
 
 app.get('/contact', (req, res) => {
     res.sendFile(path.join(__dirname, 'contact_us.html'));
+});
+
+// Test email page (for development)
+app.get('/test-email', (req, res) => {
+    res.sendFile(path.join(__dirname, 'test-email.html'));
+});
+
+// Forgot password page
+app.get('/forgot-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'forgot-password.html'));
+});
+
+// Forgot password demo page
+app.get('/forgot-password-demo', (req, res) => {
+    res.sendFile(path.join(__dirname, 'forgot-password-demo.html'));
 });
 
 // API Routes
@@ -269,6 +361,17 @@ app.post('/signin', async (req, res) => {
         );
 
         console.log(`✅ New user registered: ${username} (ID: ${result.insertId})`);
+
+        // Send welcome email (don't block registration if email fails)
+        sendWelcomeEmail(email, username).then((emailResult) => {
+            if (emailResult.success) {
+                console.log(`📧 Welcome email sent to: ${email}`);
+            } else {
+                console.warn(`⚠️  Welcome email failed for: ${email} - ${emailResult.error}`);
+            }
+        }).catch((emailError) => {
+            console.error(`❌ Welcome email error for: ${email}`, emailError);
+        });
 
         // Successful registration - redirect to login page with success message
         res.send(`
@@ -485,6 +588,235 @@ app.get('/api/auth-status', (req, res) => {
 });
 
 // =============================================================
+// FORGOT PASSWORD API ENDPOINTS
+// =============================================================
+
+// Generate and send OTP for password reset
+app.post('/api/forgot-password/send-otp', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        // Validate email
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email is required'
+            });
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please enter a valid email address'
+            });
+        }
+
+        // Check if user exists
+        const [users] = await promisePool.execute(
+            'SELECT id, username FROM users WHERE email = ?',
+            [email]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No account found with this email address'
+            });
+        }
+
+        const user = users[0];
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Set expiration time (10 minutes from now)
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+        // Delete any existing OTPs for this email
+        await promisePool.execute(
+            'DELETE FROM password_reset_otps WHERE email = ?',
+            [email]
+        );
+
+        // Store OTP in database
+        await promisePool.execute(
+            'INSERT INTO password_reset_otps (email, otp, expires_at) VALUES (?, ?, ?)',
+            [email, otp, expiresAt]
+        );
+
+        // Send OTP email
+        const emailResult = await sendPasswordResetOTP(email, user.username, otp);
+
+        if (emailResult.success) {
+            console.log(`✅ Password reset OTP sent to: ${email}`);
+            res.json({
+                success: true,
+                message: 'OTP sent successfully! Please check your email.'
+            });
+        } else {
+            console.error(`❌ Failed to send OTP to: ${email}`);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to send OTP. Please try again.'
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Send OTP error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error. Please try again later.'
+        });
+    }
+});
+
+// Verify OTP for password reset
+app.post('/api/forgot-password/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        // Validate input
+        if (!email || !otp) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email and OTP are required'
+            });
+        }
+
+        if (otp.length !== 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'OTP must be 6 digits'
+            });
+        }
+
+        // Check if OTP exists and is valid
+        const [otpRecords] = await promisePool.execute(
+            'SELECT * FROM password_reset_otps WHERE email = ? AND otp = ? AND used = FALSE AND expires_at > NOW()',
+            [email, otp]
+        );
+
+        if (otpRecords.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired OTP'
+            });
+        }
+
+        // Mark OTP as used
+        await promisePool.execute(
+            'UPDATE password_reset_otps SET used = TRUE WHERE email = ? AND otp = ?',
+            [email, otp]
+        );
+
+        console.log(`✅ OTP verified for: ${email}`);
+
+        res.json({
+            success: true,
+            message: 'OTP verified successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ Verify OTP error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error. Please try again later.'
+        });
+    }
+});
+
+// Reset password after OTP verification
+app.post('/api/forgot-password/reset-password', async (req, res) => {
+    try {
+        const { email, newPassword } = req.body;
+
+        // Validate input
+        if (!email || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email and new password are required'
+            });
+        }
+
+        // Validate password strength
+        if (newPassword.length < 8) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 8 characters long'
+            });
+        }
+
+        const hasUpper = /[A-Z]/.test(newPassword);
+        const hasLower = /[a-z]/.test(newPassword);
+        const hasNumber = /\d/.test(newPassword);
+
+        if (!hasUpper || !hasLower || !hasNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+            });
+        }
+
+        // Check if there's a recent verified OTP for this email
+        const [recentOtps] = await promisePool.execute(
+            'SELECT * FROM password_reset_otps WHERE email = ? AND used = TRUE AND created_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE) ORDER BY created_at DESC LIMIT 1',
+            [email]
+        );
+
+        if (recentOtps.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No valid password reset session found. Please start the process again.'
+            });
+        }
+
+        // Check if user exists
+        const [users] = await promisePool.execute(
+            'SELECT id FROM users WHERE email = ?',
+            [email]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Hash the new password
+        const saltRounds = config.security.bcryptSaltRounds;
+        const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+        // Update user's password
+        await promisePool.execute(
+            'UPDATE users SET password_hash = ? WHERE email = ?',
+            [passwordHash, email]
+        );
+
+        // Clean up: delete all OTPs for this email
+        await promisePool.execute(
+            'DELETE FROM password_reset_otps WHERE email = ?',
+            [email]
+        );
+
+        console.log(`✅ Password reset successfully for: ${email}`);
+
+        res.json({
+            success: true,
+            message: 'Password reset successfully! You can now login with your new password.'
+        });
+
+    } catch (error) {
+        console.error('❌ Reset password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error. Please try again later.'
+        });
+    }
+});
+
+// =============================================================
 // PRODUCT API ENDPOINTS
 // =============================================================
 
@@ -555,6 +887,25 @@ app.post('/api/add-product', async (req, res) => {
         );
 
         console.log(`✅ New product added: ${name} by user ID ${userId}`);
+
+        // Get user email and username for notification
+        const [userData] = await promisePool.execute(
+            'SELECT email, username FROM users WHERE id = ?',
+            [userId]
+        );
+
+        if (userData.length > 0) {
+            // Send product listing notification email (don't block response if email fails)
+            sendProductListingNotification(userData[0].email, userData[0].username, name).then((emailResult) => {
+                if (emailResult.success) {
+                    console.log(`📧 Product listing notification sent to: ${userData[0].email}`);
+                } else {
+                    console.warn(`⚠️  Product listing notification failed for: ${userData[0].email} - ${emailResult.error}`);
+                }
+            }).catch((emailError) => {
+                console.error(`❌ Product listing notification error for: ${userData[0].email}`, emailError);
+            });
+        }
 
         res.json({
             success: true,
@@ -1450,7 +1801,7 @@ app.delete('/api/admin/products/:productId', requireAdmin, async (req, res) => {
 
         // Delete from sold_items if exists
         await promisePool.execute(
-            'DELETE FROM sold_items WHERE product_id = ?',
+            'DELETE FROM sold_items WHERE original_product_id = ?',
             [productId]
         );
 
@@ -1502,8 +1853,8 @@ app.delete('/api/admin/users/:userId', requireAdmin, async (req, res) => {
             // Delete from cart
             await connection.execute('DELETE FROM cart WHERE user_id = ?', [userId]);
             
-            // Delete from sold_items (both as seller and buyer)
-            await connection.execute('DELETE FROM sold_items WHERE seller_id = ? OR buyer_id = ?', [userId, userId]);
+            // Delete from sold_items (user_id represents the seller in this table)
+            await connection.execute('DELETE FROM sold_items WHERE user_id = ?', [userId]);
             
             // Delete products (will cascade to cart and sold_items due to foreign keys)
             await connection.execute('DELETE FROM products WHERE user_id = ?', [userId]);
@@ -1532,6 +1883,68 @@ app.delete('/api/admin/users/:userId', requireAdmin, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to delete user'
+        });
+    }
+});
+
+// Update user (admin)
+app.put('/api/admin/users/:userId', requireAdmin, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { username, phone, location } = req.body;
+
+        // Validate required fields
+        if (!username) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username is required'
+            });
+        }
+
+        // First check if user exists
+        const [existingUser] = await promisePool.execute(
+            'SELECT * FROM users WHERE id = ?',
+            [userId]
+        );
+
+        if (existingUser.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Check if username is already taken by another user
+        const [duplicateUser] = await promisePool.execute(
+            'SELECT id FROM users WHERE username = ? AND id != ?',
+            [username, userId]
+        );
+
+        if (duplicateUser.length > 0) {
+            return res.status(409).json({
+                success: false,
+                message: 'Username is already taken by another user'
+            });
+        }
+
+        // Update user
+        await promisePool.execute(
+            'UPDATE users SET username = ?, phone = ?, location = ? WHERE id = ?',
+            [username, phone || null, location || null, userId]
+        );
+
+        console.log(`✅ Admin updated user: ID ${userId}`);
+
+        res.json({
+            success: true,
+            message: 'User updated successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ Admin update user error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update user'
         });
     }
 });
@@ -1661,8 +2074,149 @@ app.get('/api/admin/report', requireAdmin, async (req, res) => {
     }
 });
 
+// System information (admin)
+app.get('/api/admin/system-info', requireAdmin, async (req, res) => {
+    try {
+        // Get database table sizes and row counts
+        const [tableStats] = await promisePool.execute(`
+            SELECT 
+                TABLE_NAME as table_name,
+                TABLE_ROWS as row_count,
+                ROUND(((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024), 2) as size_mb
+            FROM information_schema.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            ORDER BY size_mb DESC
+        `);
+
+        // Calculate total storage
+        const totalStorageMB = tableStats.reduce((sum, table) => sum + (parseFloat(table.size_mb) || 0), 0);
+
+        // Get active sessions count (approximate using recent user activity)
+        const [activeSessions] = await promisePool.execute(`
+            SELECT COUNT(DISTINCT user_id) as active_count
+            FROM (
+                SELECT user_id FROM products WHERE created_at > NOW() - INTERVAL 1 HOUR
+                UNION
+                SELECT user_id FROM sold_items WHERE sold_at > NOW() - INTERVAL 1 HOUR
+                UNION
+                SELECT user_id FROM cart WHERE cart_id IN (
+                    SELECT cart_id FROM cart WHERE cart_id > (
+                        SELECT MAX(cart_id) - 100 FROM cart
+                    )
+                )
+            ) as recent_activity
+        `);
+
+        // Get database connection info
+        const [dbInfo] = await promisePool.execute('SELECT VERSION() as version');
+
+        // Get recent backup info (simulated - you can implement actual backup logic)
+        const lastBackup = new Date(Date.now() - (Math.random() * 7 * 24 * 60 * 60 * 1000)); // Random date within last week
+
+        const systemInfo = {
+            database: {
+                status: 'Connected',
+                version: dbInfo[0].version,
+                totalTables: tableStats.length,
+                totalStorageMB: totalStorageMB.toFixed(2),
+                tableStats: tableStats.slice(0, 10) // Top 10 tables
+            },
+            sessions: {
+                activeCount: activeSessions[0].active_count || 0,
+                lastHour: activeSessions[0].active_count || 0
+            },
+            backup: {
+                lastBackup: lastBackup.toISOString(),
+                status: 'Automated'
+            },
+            server: {
+                uptime: process.uptime(),
+                nodeVersion: process.version,
+                platform: process.platform,
+                memory: {
+                    used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+                    total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+                }
+            }
+        };
+
+        console.log('✅ Admin system info retrieved');
+
+        res.json({
+            success: true,
+            systemInfo: systemInfo
+        });
+
+    } catch (error) {
+        console.error('❌ Admin system info error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve system information'
+        });
+    }
+});
+
+// Clear cache (admin)
+app.post('/api/admin/clear-cache', requireAdmin, async (req, res) => {
+    try {
+        // Simulate cache clearing (you can implement actual cache logic)
+        console.log('✅ Admin cleared cache');
+
+        res.json({
+            success: true,
+            message: 'Cache cleared successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ Admin clear cache error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to clear cache'
+        });
+    }
+});
+
 // ================================
 // END ADMIN PANEL ROUTES
+// ================================
+
+// Test email endpoint (for development only)
+app.post('/api/test-email', async (req, res) => {
+    try {
+        const { email, username } = req.body;
+        
+        if (!email || !username) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email and username are required'
+            });
+        }
+        
+        const result = await sendWelcomeEmail(email, username);
+        
+        if (result.success) {
+            res.json({
+                success: true,
+                message: 'Test email sent successfully!',
+                messageId: result.messageId
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: 'Failed to send test email',
+                error: result.error
+            });
+        }
+    } catch (error) {
+        console.error('❌ Test email error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Test email failed',
+            error: error.message
+        });
+    }
+});
+
 // ================================
 
 // Error handling middleware

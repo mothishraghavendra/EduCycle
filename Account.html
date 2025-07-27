@@ -651,12 +651,9 @@
         }
 
         function resetPassword() {
-            if (confirm('Are you sure you want to reset your password? A reset link will be sent to your email address.')) {
-                // Simulate password reset process
-                alert('Password reset link has been sent to your email address. Please check your inbox and follow the instructions.');
-                
-                // In a real application, you would make an API call here
-                console.log('Password reset requested for user');
+            if (confirm('You will be redirected to the password reset page. Do you want to continue?')) {
+                // Redirect to the forgot password page
+                window.open('/resetpassword.html', '_self');
             }
         }
 
