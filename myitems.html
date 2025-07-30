@@ -156,6 +156,24 @@
             color: #333;
         }
 
+        .software-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .item-card.software-product {
+            border-left: 4px solid #667eea;
+        }
+
         .item-title {
             font-weight: bold;
             margin-bottom: 8px;
@@ -501,30 +519,59 @@
             const statusInfo = getStatusInfo(product);
             const imageUrl = product.image1 || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjBGMEYwIi8+CjxwYXRoIGQ9Ik03MCA3MEgxMzBWMTMwSDcwVjcwWiIgZmlsbD0iI0NDQ0NDQyIvPgo8L3N2Zz4K';
             
+            // Check if it's a software product
+            const isSoftware = product.product_type === 'software';
+            
+            // Render actions based on product type
+            const actionsHtml = isSoftware ? `
+                <div class="item-actions">
+                    <button class="action-btn edit-btn" onclick="editSoftwareProduct(${product.product_id})">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <button class="action-btn delete-btn" onclick="deleteSoftwareProduct(${product.product_id}, '${product.name}')">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>
+            ` : `
+                <div class="item-actions">
+                    <button class="action-btn edit-btn" onclick="editProduct(${product.product_id})">Edit</button>
+                    <button class="action-btn mark-sold-btn" onclick="markAsSold(${product.product_id}, '${product.name}')">Mark as Sold</button>
+                    <button class="action-btn delete-btn" onclick="deleteProduct(${product.product_id}, '${product.name}')">Delete</button>
+                </div>
+            `;
+
+            // Software-specific details
+            const detailsHtml = isSoftware ? `
+                <div class="item-details">
+                    <div><strong>Type:</strong> Software Product</div>
+                    ${product.tech_stack ? `<div><strong>Tech Stack:</strong> ${product.tech_stack}</div>` : ''}
+                    <div><strong>Listed:</strong> ${formatDate(product.created_at)}</div>
+                </div>
+            ` : `
+                <div class="item-details">
+                    <div><strong>Category:</strong> ${product.category || 'Not specified'}</div>
+                    <div><strong>Condition:</strong> ${product.condition_item || 'Not specified'}</div>
+                    <div><strong>Listed:</strong> ${formatDate(product.created_at)}</div>
+                </div>
+            `;
+            
             return `
-                <div class="item-card" data-product-id="${product.product_id}" data-category="${product.category?.toLowerCase() || ''}" data-status="active">
+                <div class="item-card ${isSoftware ? 'software-product' : ''}" data-product-id="${product.product_id}" data-category="${product.category?.toLowerCase() || ''}" data-status="active" data-type="${product.product_type}">
                     <div class="item-image">
                         <img src="${imageUrl}" alt="${product.name}" style="width: 50%; height: 100%; object-fit: cover; border-radius: 5px;" 
                              onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjBGMEYwIi8+CjxwYXRoIGQ9Ik03MCA3MEgxMzBWMTMwSDcwVjcwWiIgZmlsbD0iI0NDQ0NDQyIvPgo8L3N2Zz4K'">
                         <div class="item-status ${statusInfo.class}">${statusInfo.text}</div>
+                        ${isSoftware ? '<div class="software-badge">SOFTWARE</div>' : ''}
                     </div>
                     <div class="item-title">${product.name}</div>
                     <div class="item-price">${formatPrice(product.price)}</div>
                     ${product.description ? `<div class="item-description">${product.description}</div>` : ''}
-                    <div class="item-details">
-                        <div><strong>Category:</strong> ${product.category || 'Not specified'}</div>
-                        <div><strong>Condition:</strong> ${product.condition_item || 'Not specified'}</div>
-                        <div><strong>Listed:</strong> ${formatDate(product.created_at)}</div>
-                    </div>
+                    ${detailsHtml}
                     <div class="item-stats">
                         <span><i class="bi bi-eye"></i> 0 views</span>
                         <span><i class="bi bi-heart"></i> 0 likes</span>
                     </div>
-                    <div class="item-actions">
-                        <button class="action-btn edit-btn" onclick="editProduct(${product.product_id})">Edit</button>
-                        <button class="action-btn mark-sold-btn" onclick="markAsSold(${product.product_id}, '${product.name}')">Mark as Sold</button>
-                        <button class="action-btn delete-btn" onclick="deleteProduct(${product.product_id}, '${product.name}')">Delete</button>
-                    </div>
+                    ${actionsHtml}
                 </div>
             `;
         }
@@ -690,10 +737,66 @@
             }
         }
 
+        // Edit software product function
+        function editSoftwareProduct(softwareId) {
+            console.log('Edit software product:', softwareId);
+            // Navigate to list_a_item.html with edit mode for software
+            window.location.href = `list_a_item.html?edit=software&id=${softwareId}`;
+        }
+
+        // Delete software product function
+        async function deleteSoftwareProduct(softwareId, productName) {
+            if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/software/${softwareId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Software product deleted successfully!');
+                    loadMyProducts(); // Reload the products
+                } else {
+                    alert('Failed to delete software product: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error deleting software product:', error);
+                alert('Failed to delete software product. Please try again.');
+            }
+        }
+
         // Load products when page loads
-        document.addEventListener('DOMContentLoaded', function() {
+        // Check if user is logged in
+        async function checkSession() {
+            try {
+                const response = await fetch('/api/profile');
+                const data = await response.json();
+                if (!data.success) {
+                    console.log('❌ User not logged in, redirecting...');
+                    window.location.href = 'login.html';
+                    return false;
+                }
+                console.log('✅ User session verified:', data.user.username);
+                return true;
+            } catch (error) {
+                console.error('❌ Session check failed:', error);
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('🚀 My Items page loaded');
-            loadMyProducts();
+            
+            // Check session first
+            const isLoggedIn = await checkSession();
+            if (isLoggedIn) {
+                loadMyProducts();
+            }
         });
     </script>
 </body>

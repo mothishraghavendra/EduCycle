@@ -130,11 +130,27 @@
             padding: 15px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            position: relative;
         }
 
         .product-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .software-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .product-image {
@@ -465,7 +481,8 @@
             const hasValidPhone = isValidPhoneNumber(product.seller_phone);
             
             return `
-                <div class="product-card" data-category="${product.category?.toLowerCase() || ''}" data-product-id="${product.product_id}">
+                <div class="product-card" data-category="${product.category?.toLowerCase() || ''}" data-product-id="${product.product_id}" onclick="viewProduct(${product.product_id})">
+                    ${product.product_type === 'software' ? '<div class="software-badge"><i class="bi bi-code-slash"></i> Software</div>' : ''}
                     <div class="product-image">
                         ${imageUrl ? 
                             `<img src="${imageUrl}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 5px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -473,7 +490,7 @@
                             `<i class="${categoryIcon}" style="font-size: 3rem;"></i>`
                         }
                     </div>
-                    <div class="product-title" onclick="viewProduct(${product.product_id})">${product.name}</div>
+                    <div class="product-title">${product.name}</div>
                     <div class="product-price">${formatPrice(product.price)}</div>
                     <div class="product-condition" style="display: flex; align-items: center; gap: 5px; margin-bottom: 10px;">
                         <span style="background-color: #f0f8ff; color: #1e40af; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem; font-weight: 500;">
@@ -484,39 +501,76 @@
                         <div><strong>Seller:</strong> ${product.seller_name || 'Unknown'}</div>
                         <div><strong>Listed:</strong> ${formatDate(product.created_at)}</div>
                     </div>
-                    <div class="product-actions" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="product-actions" style="display: flex; flex-direction: column; gap: 8px;" onclick="event.stopPropagation()">
                         <button class="add-to-cart-btn" onclick="addToCart(${product.product_id})">
                             <i class="bi bi-cart-plus"></i> Add to Cart
                         </button>
-                        ${hasValidPhone ? 
-                            `<button class="contact-seller-btn" onclick="contactSeller('${escapeHtml(product.seller_name || '')}', '${escapeHtml(product.name || '')}', '${escapeHtml(product.seller_phone || '')}')">
-                                <i class="bi bi-whatsapp"></i> Contact Seller
+                        ${product.product_type === 'software' ? 
+                            `<button class="download-btn" onclick="downloadSoftware(${product.product_id})" style="background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="bi bi-download"></i> Download
                             </button>` :
-                            `<button class="contact-seller-btn" disabled style="background-color: #ccc; cursor: not-allowed; opacity: 0.6;" title="Contact not available">
-                                <i class="bi bi-telephone-x"></i> Contact N/A
-                            </button>`
+                            (hasValidPhone ? 
+                                `<button class="contact-seller-btn" onclick="contactSeller('${escapeHtml(product.seller_name || '')}', '${escapeHtml(product.name || '')}', '${escapeHtml(product.seller_phone || '')}')">
+                                    <i class="bi bi-whatsapp"></i> Contact Seller
+                                </button>` :
+                                `<button class="contact-seller-btn" disabled style="background-color: #ccc; cursor: not-allowed; opacity: 0.6;" title="Contact not available">
+                                    <i class="bi bi-telephone-x"></i> Contact N/A
+                                </button>`
+                            )
                         }
                     </div>
                 </div>
             `;
         }
 
-        // Load products from backend
+        // Load products from backend (both regular and software products)
         async function loadProducts() {
             try {
                 console.log('🔄 Loading products...');
-                const response = await fetch('/api/products');
-                const data = await response.json();
-
-                if (data.success) {
-                    allProducts = data.products;
-                    console.log('✅ Loaded products:', allProducts.length);
-                    renderProducts();
-                    updateCategoryButtons();
-                } else {
-                    console.error('❌ Failed to load products:', data.message);
-                    showError(data.message || 'Failed to load products');
+                
+                // Load regular products
+                const regularResponse = await fetch('/api/products');
+                const regularData = await regularResponse.json();
+                
+                let regularProducts = [];
+                if (regularData.success) {
+                    regularProducts = regularData.products.map(product => ({
+                        ...product,
+                        product_type: 'regular'
+                    }));
                 }
+
+                // Load software products
+                let softwareProducts = [];
+                try {
+                    const softwareResponse = await fetch('/api/software');
+                    const softwareData = await softwareResponse.json();
+                    
+                    if (softwareData.success) {
+                        softwareProducts = softwareData.software.map(software => ({
+                            product_id: software.software_id,
+                            name: software.name,
+                            description: software.description,
+                            price: software.price,
+                            category: 'software',
+                            condition_item: 'New',
+                            image1: software.image1_url,
+                            seller_name: software.seller_name,
+                            seller_phone: null, // Software products don't have phone contact
+                            created_at: software.created_at,
+                            product_type: 'software'
+                        }));
+                    }
+                } catch (error) {
+                    console.log('⚠️ Software products not available:', error.message);
+                }
+
+                // Combine all products
+                allProducts = [...regularProducts, ...softwareProducts];
+                console.log(`✅ Loaded ${regularProducts.length} regular products and ${softwareProducts.length} software products`);
+                
+                renderProducts();
+                updateCategoryButtons();
             } catch (error) {
                 console.error('❌ Error loading products:', error);
                 showError('Unable to connect to server. Please try again later.');
@@ -664,8 +718,30 @@
         // View product details
         function viewProduct(productId) {
             console.log('View product:', productId);
-            // TODO: Implement product detail view
-            alert('Product detail view will be implemented soon!');
+            
+            // Find the product in our allProducts array to determine type
+            const product = allProducts.find(p => p.product_id == productId);
+            const productType = product?.product_type || 'auto';
+            
+            // Determine the correct template based on product type
+            let templateUrl;
+            if (productType === 'software') {
+                templateUrl = `software_detail.html?id=${productId}`;
+            } else {
+                templateUrl = `regular_product_detail.html?id=${productId}`;
+            }
+            
+            // Check if we're in an iframe (dashboard context)
+            if (window.parent && window.parent !== window) {
+                // Send message to parent to update iframe source
+                window.parent.postMessage({
+                    type: 'navigate',
+                    url: templateUrl
+                }, '*');
+            } else {
+                // If not in iframe, navigate directly
+                window.location.href = templateUrl;
+            }
         }
 
         // Helper function to format phone number display
@@ -750,14 +826,70 @@ Thanks! 😊
             window.open(whatsappUrl, '_blank');
         }
 
+        // Download software function
+        async function downloadSoftware(productId) {
+            const button = event?.target?.closest?.('.download-btn') || event?.target;
+            
+            try {
+                console.log('⬇️ Downloading software:', productId);
+                
+                // Disable button during request
+                if (button) {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading...';
+                }
+                
+                // Get software details first
+                const response = await fetch(`/api/software/${productId}`);
+                const data = await response.json();
+                
+                if (data.success && data.software) {
+                    const software = data.software;
+                    
+                    if (software.download_link && software.download_link !== '#download' && software.download_link.trim() !== '') {
+                        // Record download
+                        fetch(`/api/software/${productId}/download`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        }).catch(error => console.log('Download tracking failed:', error));
+                        
+                        // Open download link
+                        window.open(software.download_link, '_blank');
+                        
+                        // Show success message
+                        showMessage('success', 'Opening download link...');
+                    } else {
+                        showMessage('error', 'Download link not available for this software');
+                    }
+                } else {
+                    showMessage('error', 'Software not found');
+                }
+            } catch (error) {
+                console.error('❌ Error downloading software:', error);
+                showMessage('error', 'Failed to download software');
+            } finally {
+                // Re-enable button
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="bi bi-download"></i> Download';
+                }
+            }
+        }
+
         // Add product to cart
         async function addToCart(productId) {
             const button = event?.target?.closest?.('.add-to-cart-btn') || event?.target;
             
             try {
-                console.log('🛒 Adding product to cart:', productId);
+                // Find the product to determine its type
+                const product = allProducts.find(p => p.product_id == productId);
+                const productType = product?.product_type || 'auto';
+                
+                console.log('🛒 Adding product to cart:', productId, 'Type:', productType);
                 console.log('🔗 Request URL:', '/api/cart/add');
-                console.log('📦 Request payload:', { productId });
+                console.log('📦 Request payload:', { productId, productType });
                 
                 // Disable button during request
                 if (button) {
@@ -771,7 +903,8 @@ Thanks! 😊
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        productId: productId
+                        productId: productId,
+                        productType: productType
                     })
                 });
 
@@ -888,6 +1021,60 @@ Thanks! 😊
                     alert('Error adding to cart: ' + error.message + '\n\nPlease check the browser console for more details.');
                 }
             }
+        }
+
+        // Show message function
+        function showMessage(type, message) {
+            // Create message element if it doesn't exist
+            let messageEl = document.getElementById('message-container');
+            if (!messageEl) {
+                messageEl = document.createElement('div');
+                messageEl.id = 'message-container';
+                messageEl.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 10000;
+                    max-width: 300px;
+                `;
+                document.body.appendChild(messageEl);
+            }
+            
+            // Create message
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                padding: 12px 16px;
+                margin-bottom: 10px;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 500;
+                color: white;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+                background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff'};
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            messageDiv.textContent = message;
+            
+            messageEl.appendChild(messageDiv);
+            
+            // Animate in
+            setTimeout(() => {
+                messageDiv.style.opacity = '1';
+                messageDiv.style.transform = 'translateX(0)';
+            }, 10);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                messageDiv.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.parentNode.removeChild(messageDiv);
+                    }
+                }, 300);
+            }, 3000);
         }
 
         // Load products when page loads

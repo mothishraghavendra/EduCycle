@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - EduCycle</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #ffffff;
+            color: #0f1111;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            background: none;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: #007185;
+            text-decoration: none;
+            font-weight: 400;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+            color: #c7511f;
+        }
+
+        .breadcrumb-separator {
+            margin: 0 8px;
+            color: #666;
+        }
+
+        /* Main Product Section */
+        .product-main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #d5d9d9;
+            margin-bottom: 20px;
+        }
+
+        /* Image Gallery */
+        .image-gallery {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slideshow-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 1px solid #d5d9d9;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slideshow-dots {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            transition: background 0.3s ease;
+            border: 2px solid rgba(0, 0, 0, 0.2);
+        }
+
+        .dot.active {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .main-image {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            border: 1px solid #d5d9d9;
+            object-fit: cover;
+            background: #ffffff;
+            cursor: zoom-in;
+            transition: all 0.3s ease;
+        }
+
+        .main-image:hover {
+            border-color: #007185;
+            box-shadow: 0 4px 12px rgba(0, 113, 133, 0.2);
+        }
+
+        .thumbnail-container {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+
+        .thumbnail {
+            width: 80px;
+            height: 80px;
+            border-radius: 6px;
+            border: 2px solid #d5d9d9;
+            object-fit: cover;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .thumbnail:hover,
+        .thumbnail.active {
+            border-color: #007185;
+            box-shadow: 0 2px 8px rgba(0, 113, 133, 0.3);
+        }
+
+        /* Product Info */
+        .product-info {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .product-title {
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: #0f1111;
+            line-height: 1.3;
+            margin: 0;
+        }
+
+        .product-meta {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .category-badge {
+            background: #007185;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .condition-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .condition-badge.fair {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .condition-badge.poor {
+            background: #dc3545;
+        }
+
+        /* Price Section */
+        .price-section {
+            padding: 20px 0;
+            border-top: 1px solid #e7e7e7;
+            border-bottom: 1px solid #e7e7e7;
+        }
+
+        .price {
+            font-size: 2rem;
+            font-weight: 400;
+            color: #b12704;
+            margin-bottom: 5px;
+        }
+
+        .price-label {
+            font-size: 0.875rem;
+            color: #565959;
+        }
+
+        .free-badge {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        /* Product Description */
+        .product-description {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #d5d9d9;
+            margin: 20px 0;
+        }
+
+        .product-description h3 {
+            color: #0f1111;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .product-description p {
+            color: #565959;
+            line-height: 1.6;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: 1px solid;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            min-height: 40px;
+        }
+
+        .btn-primary {
+            background: #ff9900;
+            color: #0f1111;
+            border-color: #ff9900;
+        }
+
+        .btn-primary:hover {
+            background: #fa8900;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(255, 153, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            color: #0f1111;
+            border-color: #d5d9d9;
+        }
+
+        .btn-secondary:hover {
+            background: #f7f8fa;
+            border-color: #adb1b8;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: #ffffff;
+            color: #007185;
+            border-color: #007185;
+        }
+
+        .btn-outline:hover {
+            background: #007185;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* Product Details Tabs */
+        .details-section {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #d5d9d9;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #d5d9d9;
+            background: #f7f8fa;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tab {
+            padding: 16px 20px;
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #0f1111;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab.active {
+            color: #007185;
+            border-bottom-color: #007185;
+            background: white;
+        }
+
+        .tab:hover {
+            color: #007185;
+        }
+
+        .tab-content {
+            padding: 25px;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .description {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #0f1111;
+        }
+
+        .specifications-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .spec-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #007185;
+        }
+
+        .spec-label {
+            font-weight: 600;
+            color: #0f1111;
+            font-size: 0.9rem;
+        }
+
+        .spec-value {
+            color: #565959;
+            font-size: 0.9rem;
+        }
+
+        /* Seller Information */
+        .seller-section {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            border: 1px solid #d5d9d9;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .seller-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .seller-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #232f3e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .seller-info h3 {
+            color: #0f1111;
+            margin-bottom: 5px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .seller-location {
+            color: #565959;
+            font-size: 0.9rem;
+        }
+
+        .seller-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f7f8fa;
+            border-radius: 6px;
+            border: 1px solid #d5d9d9;
+        }
+
+        .stat-number {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #0f1111;
+        }
+
+        .stat-label {
+            color: #565959;
+            font-size: 0.8rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .product-main {
+                grid-template-columns: 1fr;
+                gap: 25px;
+                padding: 20px;
+            }
+
+            .product-title {
+                font-size: 1.5rem;
+            }
+
+            .price {
+                font-size: 1.8rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                border-bottom: 1px solid #d5d9d9;
+                border-radius: 0;
+            }
+
+            .tab.active {
+                border-bottom-color: #007185;
+                border-left: 3px solid #007185;
+            }
+
+            .seller-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .specifications-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading States */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #ff9900;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Messages */
+        .message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 15px 0;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <a href="main.html">Home</a>
+            <span class="breadcrumb-separator">›</span>
+            <a href="#" id="categoryLink">Category</a>
+            <span class="breadcrumb-separator">›</span>
+            <span id="productBreadcrumb">Product</span>
+        </nav>
+
+        <!-- Main Product Section -->
+        <div class="product-main">
+            <!-- Image Gallery -->
+            <div class="image-gallery">
+                <div id="imageContainer">
+                    <!-- Images will be populated here with slideshow -->
+                </div>
+                
+                <div class="thumbnail-container" id="thumbnailContainer">
+                    <!-- Thumbnails will be populated here -->
+                </div>
+            </div>
+
+            <!-- Product Info -->
+            <div class="product-info">
+                <h1 class="product-title" id="productTitle">Loading Product...</h1>
+                
+                <div class="product-meta">
+                    <span class="category-badge" id="categoryBadge">Loading...</span>
+                    <span class="condition-badge" id="conditionBadge">New</span>
+                </div>
+
+                <!-- Product Description -->
+                <div class="product-description">
+                    <h3>About this item</h3>
+                    <p id="productDescription">Loading product description...</p>
+                </div>
+
+                <!-- Price Section -->
+                <div class="price-section">
+                    <div id="priceContainer">
+                        <div class="price" id="productPrice">₹0</div>
+                        <div class="price-label">Price</div>
+                    </div>
+                    <div id="freeContainer" style="display: none;">
+                        <div class="free-badge">
+                            FREE - Available for donation
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="addToCart()">
+                        <i class="bi bi-cart-plus"></i>
+                        Add to Cart
+                    </button>
+                    <button class="btn btn-secondary" onclick="contactSeller()">
+                        <i class="bi bi-chat-dots"></i>
+                        Contact Seller
+                    </button>
+                    <button class="btn btn-outline" onclick="shareProduct()">
+                        <i class="bi bi-share"></i>
+                        Share Product
+                    </button>
+                </div>
+
+                <!-- Messages -->
+                <div class="message success" id="successMessage">
+                    <i class="bi bi-check-circle"></i> <span id="successText"></span>
+                </div>
+                <div class="message error" id="errorMessage">
+                    <i class="bi bi-exclamation-circle"></i> <span id="errorText"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Details Tabs -->
+        <div class="details-section">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('description')">
+                    <i class="bi bi-file-text"></i> Description
+                </button>
+                <button class="tab" onclick="switchTab('specifications')">
+                    <i class="bi bi-list-ul"></i> Specifications
+                </button>
+            </div>
+            
+            <div class="tab-content">
+                <div class="tab-panel active" id="description">
+                    <div class="description" id="productDetailDescription">
+                        Loading detailed product description...
+                    </div>
+                </div>
+                
+                <div class="tab-panel" id="specifications">
+                    <div class="specifications-grid" id="specificationsGrid">
+                        <!-- Specifications will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seller Information -->
+        <div class="seller-section">
+            <div class="seller-header">
+                <div class="seller-avatar" id="sellerAvatar">U</div>
+                <div class="seller-info">
+                    <h3 id="sellerName">Loading...</h3>
+                    <div class="seller-location" id="sellerLocation">Location</div>
+                </div>
+            </div>
+            
+            <div class="seller-stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="itemsSold">0</div>
+                    <div class="stat-label">Items Sold</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="memberSince">2024</div>
+                    <div class="stat-label">Member Since</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div>Loading product details...</div>
+    </div>
+
+    <script>
+        let currentProduct = null;
+        let currentImageIndex = 0;
+        let slideshowInterval = null;
+        let currentSlide = 0;
+        let productImages = [];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProductDetails();
+        });
+
+        // Load product details from database
+        function loadProductDetails() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('id');
+            
+            if (!productId) {
+                showMessage('error', 'Product ID not provided');
+                document.getElementById('loadingOverlay').style.display = 'none';
+                return;
+            }
+            
+            // Fetch regular product details from API
+            fetch(`/api/product/${productId}?type=regular`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayProduct(data.product);
+                    } else {
+                        showMessage('error', data.message || 'Product not found');
+                    }
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error loading product:', error);
+                    showMessage('error', 'Failed to load product details');
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                });
+        }
+
+        // Display product information
+        function displayProduct(product) {
+            currentProduct = product;
+            
+            // Basic info
+            document.getElementById('productTitle').textContent = product.name || 'Unknown Product';
+            document.getElementById('productBreadcrumb').textContent = product.name || 'Product';
+            document.getElementById('categoryBadge').textContent = getCategoryName(product.category);
+            document.getElementById('productDescription').textContent = product.description || 'No description available.';
+            document.getElementById('productDetailDescription').innerHTML = `
+                <p>${product.description || 'No detailed description available.'}</p>
+                ${product.category ? `<p style="margin-top: 15px;"><strong>Category:</strong> ${getCategoryName(product.category)}</p>` : ''}
+            `;
+            
+            // Category link
+            document.getElementById('categoryLink').textContent = getCategoryName(product.category);
+            document.getElementById('categoryLink').href = `main.html?category=${product.category}`;
+            
+            // Condition badge
+            const conditionBadge = document.getElementById('conditionBadge');
+            const condition = product.condition_item || product.condition || 'Good';
+            conditionBadge.textContent = condition;
+            conditionBadge.className = `condition-badge ${condition.toLowerCase().replace(' ', '-')}`;
+            
+            // Price
+            const price = parseFloat(product.price || 0);
+            if (price === 0) {
+                document.getElementById('priceContainer').style.display = 'none';
+                document.getElementById('freeContainer').style.display = 'block';
+            } else {
+                document.getElementById('productPrice').textContent = `₹${price.toFixed(2)}`;
+                document.getElementById('priceContainer').style.display = 'block';
+                document.getElementById('freeContainer').style.display = 'none';
+            }
+            
+            // Images - handle both URL and blob data
+            let images = [];
+            
+            // Check if images array is available (from API response)
+            if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+                images = product.images.filter(img => img && img.trim() !== '');
+            } else {
+                // Fallback: Check for URL-based images first
+                if (product.image1_url && product.image1_url.trim() !== '') {
+                    images.push(product.image1_url);
+                }
+                if (product.image2_url && product.image2_url.trim() !== '') {
+                    images.push(product.image2_url);
+                }
+                if (product.image3_url && product.image3_url.trim() !== '') {
+                    images.push(product.image3_url);
+                }
+                
+                // Handle blob images if no URLs (legacy support)
+                if (images.length === 0) {
+                    if (product.image1) {
+                        images.push(`data:image/jpeg;base64,${product.image1}`);
+                    }
+                    if (product.image2) {
+                        images.push(`data:image/jpeg;base64,${product.image2}`);
+                    }
+                    if (product.image3) {
+                        images.push(`data:image/jpeg;base64,${product.image3}`);
+                    }
+                }
+            }
+            
+            // Set images array on product for other functions
+            product.images = images;
+            
+            // Display images
+            displayImages(images);
+            
+            // Seller info
+            displaySellerInfo(product.seller);
+            
+            // Specifications
+            displaySpecifications(product);
+        }
+
+        // Display images with slideshow
+        function displayImages(images) {
+            const imageContainer = document.getElementById('imageContainer');
+            const thumbnailContainer = document.getElementById('thumbnailContainer');
+            
+            productImages = images && images.length > 0 ? images : [];
+            
+            if (productImages.length > 0) {
+                // Setup slideshow or single image
+                setupImageSlideshow(productImages);
+                
+                // Create thumbnails
+                thumbnailContainer.innerHTML = '';
+                productImages.forEach((img, index) => {
+                    const thumbnail = document.createElement('img');
+                    thumbnail.src = img;
+                    thumbnail.className = `thumbnail ${index === 0 ? 'active' : ''}`;
+                    thumbnail.onclick = () => goToSlide(index);
+                    thumbnail.onerror = function() {
+                        this.src = `https://via.placeholder.com/80x80/f8f9fa/666?text=${index + 1}`;
+                    };
+                    thumbnailContainer.appendChild(thumbnail);
+                });
+                
+                currentSlide = 0;
+            } else {
+                // Default placeholder image
+                const placeholderText = currentProduct?.name?.substring(0, 20) || 'Product';
+                imageContainer.innerHTML = `<img class="main-image" src="https://via.placeholder.com/500x500/f8f9fa/666?text=${encodeURIComponent(placeholderText)}" alt="Product Image">`;
+                thumbnailContainer.innerHTML = '';
+            }
+        }
+
+        // Setup image slideshow
+        function setupImageSlideshow(images) {
+            const imageContainer = document.getElementById('imageContainer');
+            
+            if (images.length === 1) {
+                // Single image - no slideshow needed
+                imageContainer.innerHTML = `<img class="main-image" src="${images[0]}" alt="Product Image" onerror="this.src='https://via.placeholder.com/500x500/f8f9fa/666?text=Product'">`;
+                return;
+            }
+            
+            // Multiple images - create slideshow
+            let slideshowHTML = '<div class="slideshow-container">';
+            
+            images.forEach((imageUrl, index) => {
+                slideshowHTML += `
+                    <div class="slide ${index === 0 ? 'active' : ''}" data-slide="${index}">
+                        <img src="${imageUrl}" alt="Product Image ${index + 1}" onerror="this.style.display='none'">
+                    </div>
+                `;
+            });
+            
+            // Add dots for navigation if more than one image
+            if (images.length > 1) {
+                slideshowHTML += '<div class="slideshow-dots">';
+                images.forEach((_, index) => {
+                    slideshowHTML += `<span class="dot ${index === 0 ? 'active' : ''}" onclick="goToSlide(${index})"></span>`;
+                });
+                slideshowHTML += '</div>';
+            }
+            
+            slideshowHTML += '</div>';
+            imageContainer.innerHTML = slideshowHTML;
+            
+            // Start automatic slideshow
+            if (images.length > 1) {
+                startSlideshow();
+            }
+        }
+
+        // Start automatic slideshow
+        function startSlideshow() {
+            if (slideshowInterval) {
+                clearInterval(slideshowInterval);
+            }
+            
+            slideshowInterval = setInterval(() => {
+                nextSlide();
+            }, 5000); // Change slide every 5 seconds
+        }
+
+        // Go to next slide
+        function nextSlide() {
+            if (productImages.length <= 1) return;
+            
+            currentSlide = (currentSlide + 1) % productImages.length;
+            showSlide(currentSlide);
+        }
+
+        // Go to specific slide
+        function goToSlide(slideIndex) {
+            if (productImages.length <= 1) return;
+            
+            currentSlide = slideIndex;
+            showSlide(currentSlide);
+            
+            // Update active thumbnail
+            document.querySelectorAll('.thumbnail').forEach((thumb, index) => {
+                thumb.classList.toggle('active', index === slideIndex);
+            });
+            
+            // Restart the slideshow timer
+            startSlideshow();
+        }
+
+        // Show specific slide
+        function showSlide(slideIndex) {
+            const slides = document.querySelectorAll('.slide');
+            const dots = document.querySelectorAll('.dot');
+            
+            slides.forEach((slide, index) => {
+                slide.classList.toggle('active', index === slideIndex);
+            });
+            
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === slideIndex);
+            });
+        }
+
+        // Display seller information
+        function displaySellerInfo(seller) {
+            if (!seller) return;
+            
+            document.getElementById('sellerName').textContent = seller.name || 'Unknown Seller';
+            document.getElementById('sellerLocation').textContent = seller.location || 'Location not specified';
+            document.getElementById('sellerAvatar').textContent = (seller.name || 'U').charAt(0).toUpperCase();
+            document.getElementById('itemsSold').textContent = seller.itemsSold || 0;
+            document.getElementById('memberSince').textContent = seller.memberSince || '2024';
+        }
+
+        // Display specifications
+        function displaySpecifications(product) {
+            const specsGrid = document.getElementById('specificationsGrid');
+            const specs = [
+                { label: 'Category', value: getCategoryName(product.category) },
+                { label: 'Condition', value: product.condition_item || product.condition || 'Good' },
+                { label: 'Price Type', value: (parseFloat(product.price || 0) === 0) ? 'Free Donation' : 'Paid Item' },
+                { label: 'Listed Date', value: formatDate(product.created_at) },
+                { label: 'Last Updated', value: formatDate(product.updated_at) },
+                { label: 'Item ID', value: `EDU${product.product_id || product.id}` },
+                { label: 'Seller', value: product.seller?.name || 'Unknown Seller' }
+            ];
+            
+            specsGrid.innerHTML = specs.map(spec => `
+                <div class="spec-item">
+                    <span class="spec-label">${spec.label}</span>
+                    <span class="spec-value">${spec.value}</span>
+                </div>
+            `).join('');
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Action functions
+        function addToCart() {
+            if (!currentProduct) {
+                showMessage('error', 'Product not loaded');
+                return;
+            }
+
+            fetch('/api/cart/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productId: currentProduct.product_id || currentProduct.id,
+                    productType: 'regular',
+                    quantity: 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('success', 'Item added to cart successfully!');
+                } else {
+                    showMessage('error', data.message || 'Failed to add item to cart');
+                }
+            })
+            .catch(error => {
+                console.error('Error adding to cart:', error);
+                showMessage('error', 'Failed to add item to cart');
+            });
+        }
+
+        function contactSeller() {
+            if (!currentProduct || !currentProduct.seller) {
+                showMessage('error', 'Seller information not available');
+                return;
+            }
+
+            const seller = currentProduct.seller;
+            const productName = currentProduct.name;
+            
+            if (seller.phone && seller.phone.trim() !== '') {
+                // Format phone number with Indian country code (+91)
+                let phoneNumber = seller.phone.replace(/\D/g, ''); // Remove all non-digits
+                
+                // If phone number doesn't start with country code, assume it's Indian (+91)
+                if (phoneNumber.length === 10) {
+                    phoneNumber = '91' + phoneNumber;
+                } else if (phoneNumber.startsWith('0') && phoneNumber.length === 11) {
+                    // Remove leading 0 and add 91
+                    phoneNumber = '91' + phoneNumber.substring(1);
+                } else if (phoneNumber.startsWith('91') && phoneNumber.length === 12) {
+                    // Already has country code
+                    phoneNumber = phoneNumber;
+                }
+                
+                // Validate phone number
+                if (phoneNumber.length < 12 || phoneNumber.length > 13) {
+                    showMessage('error', 'Invalid phone number format');
+                    return;
+                }
+                
+                const whatsappMessage = `🎓 Hi ${seller.name}!
+
+I found your product on Educycle and I'm interested in:
+📚 *${productName}*
+
+Could you please provide more details about:
+• Current condition & actual photos
+• Availability & pricing
+• Pickup/delivery options
+• Best time to contact
+
+Looking forward to hearing from you!
+
+Thanks! 😊
+- From Educycle Platform`;
+                
+                const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+                console.log('Opening WhatsApp URL:', whatsappUrl);
+                window.open(whatsappUrl, '_blank');
+                showMessage('success', 'Opening WhatsApp to contact seller...');
+            } else if (seller.email && seller.email.trim() !== '') {
+                const emailSubject = `Interested in: ${productName}`;
+                const emailBody = `Hi ${seller.name},\n\nI'm interested in your product "${productName}" listed on EduCycle.\n\nPlease let me know if it's still available.\n\nThanks!`;
+                const mailtoUrl = `mailto:${seller.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+                window.location.href = mailtoUrl;
+                showMessage('success', 'Opening email to contact seller...');
+            } else {
+                showMessage('error', 'Seller contact information not available');
+            }
+        }
+
+        function shareProduct() {
+            if (!currentProduct) {
+                showMessage('error', 'Product not loaded');
+                return;
+            }
+
+            const productUrl = `${window.location.origin}/regular_product_detail.html?id=${currentProduct.product_id || currentProduct.id}`;
+            const price = parseFloat(currentProduct.price || 0);
+            const priceText = price === 0 ? 'Free' : `₹${price.toFixed(2)}`;
+            
+            const shareData = {
+                title: currentProduct.name,
+                text: `Check out this item on EduCycle: ${currentProduct.name} - ${priceText}`,
+                url: productUrl
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData).catch(err => {
+                    console.log('Error sharing:', err);
+                    fallbackShare(productUrl);
+                });
+            } else {
+                fallbackShare(productUrl);
+            }
+        }
+
+        function fallbackShare(url) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showMessage('success', 'Product link copied to clipboard!');
+                }).catch(() => {
+                    showMessage('error', 'Failed to copy link');
+                });
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showMessage('success', 'Product link copied to clipboard!');
+                } catch (err) {
+                    showMessage('error', 'Failed to copy link');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        function openImageModal() {
+            // Could implement a modal gallery here
+            console.log('Open image modal for image:', currentImageIndex);
+        }
+
+        // Utility functions
+        function getCategoryName(category) {
+            const categories = {
+                'calculator': 'Calculator',
+                'hardware': 'Electronics',
+                'software': 'Software & Digital',
+                'drafting-items': 'Stationery',
+                'textbooks': 'Textbooks',
+                'study-materials': 'Study Materials',
+                'notes': 'Study Notes',
+                'books': 'Books',
+                'electronics': 'Electronics',
+                'lab-equipment': 'Lab Equipment',
+                'other': 'Other'
+            };
+            return categories[category] || category;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Today';
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        function showMessage(type, text) {
+            const messageEl = document.getElementById(type + 'Message');
+            const textEl = document.getElementById(type + 'Text');
+            
+            textEl.textContent = text;
+            messageEl.style.display = 'flex';
+            
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 4000);
+        }
+
+        // Listen for messages from parent window (if in iframe)
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'loadProduct') {
+                window.location.search = `?id=${event.data.productId}`;
+            }
+        });
+    </script>
+</body>
+</html>

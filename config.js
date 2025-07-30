@@ -46,6 +46,23 @@ const config = {
         password: process.env.ADMIN_PASSWORD || 'admin123'
     },
 
+    // Cloudinary Configuration
+    cloudinary: {
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+        apiKey: process.env.CLOUDINARY_API_KEY,
+        apiSecret: process.env.CLOUDINARY_API_SECRET,
+        uploadPreset: process.env.CLOUDINARY_UPLOAD_PRESET || 'educycle_unsigned'
+    },
+
+    // Email Configuration
+    email: {
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT) || 587,
+        secure: process.env.EMAIL_SECURE === 'true',
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    },
+
     // Feature Flags
     features: {
         enableLogging: process.env.ENABLE_LOGGING !== 'false',
@@ -58,7 +75,10 @@ const config = {
 const validateConfig = () => {
     const requiredVars = [
         'DB_PASSWORD',
-        'SESSION_SECRET'
+        'SESSION_SECRET',
+        'CLOUDINARY_CLOUD_NAME',
+        'CLOUDINARY_API_KEY',
+        'CLOUDINARY_API_SECRET'
     ];
 
     const missing = requiredVars.filter(varName => !process.env[varName]);
@@ -82,6 +102,12 @@ const validateConfig = () => {
         process.exit(1);
     }
 
+    // Validate Cloudinary configuration
+    if (!config.cloudinary.cloudName || !config.cloudinary.apiKey || !config.cloudinary.apiSecret) {
+        console.error('❌ Error: Cloudinary configuration is incomplete');
+        process.exit(1);
+    }
+
     // Warn about production settings
     if (config.server.environment === 'production') {
         if (config.session.secret.length < 32) {
@@ -94,6 +120,7 @@ const validateConfig = () => {
     }
 
     console.log('✅ Configuration validated successfully');
+    console.log('✅ Cloudinary configuration loaded');
 };
 
 module.exports = {

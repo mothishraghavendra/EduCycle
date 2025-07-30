@@ -1,10 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>List a New Item - Educycle</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Cloudinary Upload Widget -->
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+    <!-- Tagify CSS and JS for tech stack selection -->
+    <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
     <style>
         * {
             margin: 0;
@@ -40,7 +46,7 @@
 
         /* Main Content */
         .main-content {
-            max-width: 800px;
+            max-width: 1000px; /* Increased from 800px */
             margin: 0 auto;
             padding: 20px;
         }
@@ -161,6 +167,12 @@
             box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.1);
         }
 
+        .form-help {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
         .radio-group {
             display: flex;
             gap: 20px;
@@ -197,6 +209,7 @@
             color: #333;
         }
 
+        /* Price sections */
         .price-section {
             display: none;
             margin-top: 15px;
@@ -207,16 +220,16 @@
         }
 
         .free-indicator {
-            background-color: #28a745;
-            color: white;
-            padding: 12px 15px;
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
             border-radius: 5px;
-            font-weight: bold;
             text-align: center;
-            font-size: 1.1rem;
+            font-weight: bold;
+            border: 1px solid #c3e6cb;
         }
 
-        /* Image Upload Section */
+        /* Image Upload Grid */
         .image-upload-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -225,29 +238,29 @@
         }
 
         .image-upload-box {
-            border: 2px dashed #e1e5e9;
-            border-radius: 8px;
-            padding: 30px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background-color: #fafafa;
             position: relative;
-            min-height: 200px;
+            aspect-ratio: 1;
+            border: 3px dashed #ccc;
+            border-radius: 8px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            overflow: hidden;
         }
 
         .image-upload-box:hover {
             border-color: #ff9900;
-            background-color: #fff8f0;
+            background: #fff8f0;
         }
 
         .image-upload-box.has-image {
+            border-style: solid;
             border-color: #28a745;
-            background-color: #f8fff8;
+            background: white;
         }
 
         .upload-icon {
@@ -257,153 +270,375 @@
         }
 
         .upload-text {
+            font-weight: bold;
             color: #666;
-            font-size: 0.9rem;
             margin-bottom: 5px;
         }
 
         .upload-subtext {
+            font-size: 0.9rem;
             color: #999;
-            font-size: 0.8rem;
+        }
+
+        .file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
         }
 
         .image-preview {
-            max-width: 100%;
-            max-height: 150px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             border-radius: 5px;
-            margin-bottom: 10px;
         }
 
         .remove-image {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: #dc3545;
+            top: 8px;
+            right: 8px;
+            background: rgba(220, 53, 69, 0.9);
             color: white;
             border: none;
             border-radius: 50%;
             width: 25px;
             height: 25px;
             cursor: pointer;
-            font-size: 0.8rem;
-            display: none;
-        }
-
-        .image-upload-box.has-image .remove-image {
-            display: block;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        /* Form Actions */
-        .form-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e1e5e9;
-        }
-
-        .btn {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
             font-size: 1rem;
+            z-index: 10;
+        }
+
+        .remove-image:hover {
+            background: #dc3545;
+        }
+
+        /* Submit Button */
+        .submit-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #ff9900, #ff7700);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(255, 153, 0, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 153, 0, 0.4);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Dynamic Form Sections */
+        .dynamic-section {
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.5s ease;
+            margin-bottom: 0;
+        }
+
+        .dynamic-section.show {
+            opacity: 1;
+            max-height: 3000px; /* Increased for mobile */
+            margin-bottom: 30px; /* Ensure proper spacing */
+        }
+
+        /* Software specific styling */
+        .software-highlight {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .software-highlight h4 {
+            color: #1976d2;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .three-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* Tagify customization */
+        .tagify {
+            border: 2px solid #e1e5e9;
+            border-radius: 5px;
+            padding: 8px;
+            min-height: 45px;
+        }
+
+        .tagify:focus-within {
+            border-color: #ff9900;
+            box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.1);
+        }
+
+        .tagify__tag {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 15px;
+            padding: 4px 12px;
+            margin: 2px;
+            font-size: 0.85rem;
+        }
+
+        .tagify__tag:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+        }
+
+        .tagify__input {
+            color: #333;
+            font-size: 1rem;
+        }
+
+        /* Software category section */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .category-option {
             display: flex;
             align-items: center;
             gap: 8px;
+            padding: 10px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
         }
 
-        .btn-primary {
-            background-color: #ff9900;
-            color: white;
+        .category-option:hover {
+            border-color: #ff9900;
+            background-color: #fff8f0;
         }
 
-        .btn-primary:hover {
-            background-color: #e68900;
-            transform: translateY(-2px);
+        .category-option.selected {
+            border-color: #ff9900;
+            background-color: #fff8f0;
         }
 
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
+        .category-icon {
+            font-size: 1.2rem;
+            color: #007bff;
         }
 
-        .btn-secondary:hover {
-            background-color: #5a6268;
+        .url-input-group {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .form-help {
-            font-size: 0.85rem;
+        .url-input-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .url-prefix {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
             color: #666;
-            margin-top: 5px;
+            font-size: 24px;
+            flex-shrink: 0;
         }
 
-        /* Responsive Design */
+        .url-input {
+            flex: 1;
+            padding: 12px 16px;
+            width: 100%;
+            min-width: 300px;
+        }
+
         @media (max-width: 768px) {
             body {
-                padding: 10px;
+                padding: 5px; /* Minimal body padding on mobile */
             }
-
+            
             .main-content {
-                padding: 10px;
-                margin: 0;
-                max-width: none;
+                padding: 2px; /* Reduced padding for maximum width */
+                max-width: 100%; /* Full width on mobile for better utilization */
+                margin: 0; /* Remove default margin */
             }
-
+            
             .form-container {
-                padding: 20px;
+                padding: 8px; /* Reduced padding for more space */
+                margin: 0; /* Remove auto margin for full width */
+                border-radius: 4px; /* Smaller radius for mobile */
             }
-
+            
+            .page-header {
+                padding: 15px 8px; /* Reduced padding for mobile */
+                margin-bottom: 8px; /* Reduced margin */
+            }
+            
+            .page-title {
+                font-size: 1.4rem; /* Slightly smaller for mobile */
+            }
+            
+            .page-subtitle {
+                font-size: 0.9rem; /* Smaller subtitle */
+            }
+            
+            .form-section {
+                margin-bottom: 20px; /* Reduced margin for mobile */
+            }
+            
+            .section-title {
+                font-size: 1.1rem; /* Slightly smaller section titles */
+                margin-bottom: 12px; /* Reduced margin */
+            }
+            
+            .form-group {
+                margin-bottom: 15px; /* Reduced margin between form groups */
+            }
+            
             .radio-group {
                 flex-direction: column;
                 gap: 10px;
             }
-
+            
             .image-upload-grid {
                 grid-template-columns: 1fr;
                 gap: 15px;
             }
 
-            .form-actions {
-                flex-direction: column;
-                align-items: center;
+            .two-column {
+                grid-template-columns: 1fr;
+                gap: 15px;
             }
 
-            .btn {
-                width: 100%;
-                justify-content: center;
+            .three-column {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr); /* Two columns on mobile for better space utilization */
+                gap: 8px; /* Compact spacing for mobile */
+                max-width: 100%;
+                overflow: visible; /* Ensure all categories are visible */
+                margin-top: 15px; /* Add some margin for mobile */
+                margin-bottom: 25px; /* Extra bottom margin to prevent overlap */
+                padding: 0; /* Remove any padding */
+            }
+
+            .category-option {
+                padding: 12px 8px; /* Compact padding for mobile */
+                min-height: 55px; /* Optimized height for mobile */
+                display: flex;
+                align-items: center;
+                text-align: left;
+                font-size: 0.85rem; /* Slightly smaller text for mobile */
+                word-wrap: break-word;
+                border-radius: 6px;
+                border: 2px solid #e1e5e9; /* Ensure border is visible */
+                background: white; /* Ensure background */
+                cursor: pointer;
+            }
+
+            .category-option:hover, .category-option.selected {
+                border-color: #ff9900;
+                background-color: #fff8f0;
+            }
+
+            .category-icon {
+                font-size: 1.1rem; /* Slightly smaller icon for mobile */
+                margin-right: 8px; /* Reduced margin */
+                margin-bottom: 0;
+                flex-shrink: 0;
+                min-width: 20px; /* Ensure consistent icon width */
+                color: #007bff; /* Ensure icon color */
+            }
+            
+            /* Ensure software fields don't overlap with sale type section */
+            .dynamic-section.show {
+                margin-bottom: 40px; /* Extra spacing on mobile */
+                padding-bottom: 20px; /* Additional padding */
+            }
+            
+            /* Ensure software category section has proper spacing */
+            #softwareFields .form-group:last-child {
+                margin-bottom: 30px; /* Extra margin for last form group */
+            }
+
+            /* Make URL input fields shorter on mobile */
+            .url-input {
+                width: 75vw;
+                max-width: 300px;
+                min-width: 200px;
             }
         }
 
-        @media (max-width: 480px) {
-            body {
-                padding: 8px;
-            }
-            
+        /* Tablet responsive */
+        @media (max-width: 1024px) and (min-width: 769px) {
             .main-content {
-                padding: 8px;
+                max-width: 95%;
+                padding: 20px;
             }
             
-            .form-container {
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+
+            .category-option {
                 padding: 15px;
+                min-height: 60px;
+            }
+        }
+
+        /* Large screens */
+        @media (min-width: 1200px) {
+            .main-content {
+                max-width: 1200px; /* Increased width for large screens */
             }
             
-            .page-title {
-                font-size: 1.5rem;
+            .category-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Main Content -->
-    <main class="main-content">
+    <div class="main-content">
         <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-title">List a New Item</h1>
@@ -428,12 +663,12 @@
 
                     <div class="form-group">
                         <label for="category" class="form-label">Category <span class="required">*</span></label>
-                        <select id="category" name="category" class="form-select" required>
+                        <select id="category" name="category" class="form-select" required onchange="handleCategoryChange()">
                             <option value="">Select a category</option>
                             <option value="calculator">Calculator</option>
                             <option value="hardware">Electronics</option>
-                            <option value="software">Software</option>
-                            <option value="drafting-items">Stationary</option>
+                            <option value="software">Software & Digital</option>
+                            <option value="drafting-items">Stationery</option>
                             <option value="textbooks">Textbooks</option>
                             <option value="study-materials">Study Materials</option>
                             <option value="other">Other</option>
@@ -441,23 +676,174 @@
                         <div class="form-help">Choose the category that best describes your item</div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="condition" class="form-label">Condition <span class="required">*</span></label>
-                        <select id="condition" name="condition" class="form-select" required>
-                            <option value="">Select condition</option>
-                            <option value="New">New - Like new, never used</option>
-                            <option value="Like New">Like New - Excellent condition, barely used</option>
-                            <option value="Good">Good - Normal wear, fully functional</option>
-                            <option value="Fair">Fair - Some wear, still functional</option>
-                            <option value="Poor">Poor - Heavy wear, functional but shows age</option>
-                        </select>
-                        <div class="form-help">Honestly describe the condition of your item</div>
+                    <!-- Standard fields for non-software items -->
+                    <div id="standardFields">
+                        <div class="form-group">
+                            <label for="condition" class="form-label">Condition <span class="required">*</span></label>
+                            <select id="condition" name="condition" class="form-select" required>
+                                <option value="">Select condition</option>
+                                <option value="New">New - Like new, never used</option>
+                                <option value="Like New">Like New - Excellent condition, barely used</option>
+                                <option value="Good">Good - Normal wear, fully functional</option>
+                                <option value="Fair">Fair - Some wear, still functional</option>
+                                <option value="Poor">Poor - Heavy wear, functional but shows age</option>
+                            </select>
+                            <div class="form-help">Honestly describe the condition of your item</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description" class="form-label">Description <span class="required">*</span></label>
+                            <textarea id="description" name="description" class="form-textarea" placeholder="Describe your item's condition, features, and any important details..." required></textarea>
+                            <div class="form-help">Provide detailed information about your item's condition and features</div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="description" class="form-label">Description <span class="required">*</span></label>
-                        <textarea id="description" name="description" class="form-textarea" placeholder="Describe your item's condition, features, and any important details..." required></textarea>
-                        <div class="form-help">Provide detailed information about your item's condition and features</div>
+                    <!-- Software-specific fields -->
+                    <div id="softwareFields" class="dynamic-section">
+                        <div class="software-highlight">
+                            <h4><i class="bi bi-code-slash"></i> Software/Digital Product Information</h4>
+                            <p>Fill in the details below to showcase your software or digital tool to the community.</p>
+                        </div>
+
+                        <!-- Basic Software Info -->
+                        <div class="form-group">
+                            <label for="softwareDescription" class="form-label">Description <span class="required">*</span></label>
+                            <textarea id="softwareDescription" name="softwareDescription" class="form-textarea" placeholder="What does your software do? Who does it help? What are the key features?" required></textarea>
+                            <div class="form-help">Explain what your software does, who it helps, and key features</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tagline" class="form-label">Tagline</label>
+                            <input type="text" id="tagline" name="tagline" class="form-input" placeholder="A catchy one-liner about your software" maxlength="500">
+                            <div class="form-help">Short, memorable description (max 500 characters)</div>
+                        </div>
+
+                        <!-- Platform and Technical Details -->
+                        <div class="two-column">
+                            <div class="form-group">
+                                <label for="platform" class="form-label">Platform <span class="required">*</span></label>
+                                <select id="platform" name="platform" class="form-select" required>
+                                    <option value="">Select platform</option>
+                                    <option value="Web">Web</option>
+                                    <option value="Android">Android</option>
+                                    <option value="iOS">iOS</option>
+                                    <option value="Windows">Windows</option>
+                                    <option value="Mac">Mac</option>
+                                    <option value="Linux">Linux</option>
+                                    <option value="Cross-platform">Cross-platform</option>
+                                    <option value="Desktop">Desktop</option>
+                                    <option value="Mobile">Mobile</option>
+                                </select>
+                                <div class="form-help">Which platforms does it run on?</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="version" class="form-label">Version</label>
+                                <input type="text" id="version" name="version" class="form-input" placeholder="e.g., 1.0.0, 2.1.3" value="1.0.0">
+                                <div class="form-help">Current version of your software</div>
+                            </div>
+                        </div>
+
+                        <!-- Tech Stack with Tagify -->
+                        <div class="form-group">
+                            <label for="techStack" class="form-label">Tech Stack</label>
+                            <input id="techStack" name="techStack" class="form-input" placeholder="Enter technologies used">
+                            <div class="form-help">Programming languages, frameworks, and tools used</div>
+                        </div>
+
+                        <!-- Developer and License Info -->
+                        <div class="two-column">
+                            <div class="form-group">
+                                <label for="developerName" class="form-label">Developer Name</label>
+                                <input type="text" id="developerName" name="developerName" class="form-input" placeholder="Your name or team name">
+                                <div class="form-help">Credit to the student who built it (auto-filled from your profile)</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="licenseType" class="form-label">License Type</label>
+                                <select id="licenseType" name="licenseType" class="form-select">
+                                    <option value="">Select license</option>
+                                    <option value="MIT">MIT</option>
+                                    <option value="GPL v3">GPL v3</option>
+                                    <option value="Apache 2.0">Apache 2.0</option>
+                                    <option value="BSD">BSD</option>
+                                    <option value="Freeware">Freeware</option>
+                                    <option value="Open Source">Open Source</option>
+                                    <option value="Custom">Custom</option>
+                                    <option value="Proprietary">Proprietary</option>
+                                </select>
+                                <div class="form-help">How others can use your software</div>
+                            </div>
+                        </div>
+
+                        <!-- Links Section -->
+                        <div class="form-group">
+                            <label class="form-label">Links & Resources</label>
+                            <div style="margin-top: 10px; display: grid; gap: 15px;">
+                                <div class="url-input-group">
+                                    <div class="form-help">Direct download link (Google Drive, GitHub, etc.)</div>
+                                    <div class="url-input-row">
+                                        <span class="url-prefix"><i class="fa fa-download" style="font-size:24px"></i></span>
+                                        <input type="url" id="downloadLink" name="downloadLink" class="form-input url-input" placeholder="https://drive.google.com/... or https://github.com/...">
+                                    </div>
+                                </div>
+                                
+                                <div class="url-input-group">
+                                    <div class="form-help">Live demo or video demonstration</div>
+                                    <div class="url-input-row">
+                                        <span class="url-prefix"><i class="fa fa-play-circle-o" style="font-size:24px"></i></span>
+                                        <input type="url" id="demoLink" name="demoLink" class="form-input url-input" placeholder="https://yourapp.com or https://youtu.be/...">
+                                    </div>
+                                </div>
+                                
+                                <div class="url-input-group">
+                                    <div class="form-help">GitHub repository (if open source)</div>
+                                    <div class="url-input-row">
+                                        <span class="url-prefix"><i class="fa fa-github" style="font-size:24px"></i></span>
+                                        <input type="url" id="githubLink" name="githubLink" class="form-input url-input" placeholder="https://github.com/yourusername/project">
+                                    </div>
+                                </div>
+                                
+                                <div class="url-input-group">
+                                    <div class="form-help">Documentation or user guide</div>
+                                    <div class="url-input-row">
+                                        <span class="url-prefix"><i class="fa fa-file-text" style="font-size:24px"></i></span>
+                                        <input type="url" id="documentationLink" name="documentationLink" class="form-input url-input" placeholder="https://docs.yourproject.com">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Features -->
+                        <div class="form-group">
+                            <label for="features" class="form-label">Key Features</label>
+                            <textarea id="features" name="features" class="form-textarea" placeholder=" Feature 1&#10; Feature 2&#10; Feature 3" rows="4"></textarea>
+                            <div class="form-help">List the main features (one per line with bullet points)</div>
+                        </div>
+
+                        <!-- System Requirements -->
+                        <div class="form-group">
+                            <label for="systemRequirements" class="form-label">System Requirements</label>
+                            <textarea id="systemRequirements" name="systemRequirements" class="form-textarea" placeholder=" OS: Windows 10/11, macOS 10.15+, Ubuntu 18.04+&#10; RAM: 4GB minimum, 8GB recommended&#10; Storage: 500MB free space&#10; Other: Node.js 16+, Python 3.8+" rows="4"></textarea>
+                            <div class="form-help">Minimum system requirements to run your software</div>
+                        </div>
+
+                        <!-- Software Category Selection -->
+                        <div class="form-group">
+                            <label class="form-label">Software Category <span class="required">*</span></label>
+                            <div class="category-grid" id="softwareCategoryGrid">
+                                <!-- Categories will be populated here -->
+                            </div>
+                            <input type="hidden" id="selectedCategory" name="selectedCategory" required>
+                            <div class="form-help">Select the category that best describes your software</div>
+                        </div>
+
+                        <!-- Contact Support -->
+                        <div class="form-group">
+                            <label for="contactSupport" class="form-label">Contact / Support</label>
+                            <input type="text" id="contactSupport" name="contactSupport" class="form-input" placeholder="Email or contact info for support/collaboration">
+                            <div class="form-help">How users can reach you for support or collaboration (auto-filled from your profile)</div>
+                        </div>
                     </div>
                 </div>
 
@@ -472,13 +858,13 @@
                         <label class="form-label">Sale Type <span class="required">*</span></label>
                         <div class="radio-group">
                             <div class="radio-option" onclick="selectSaleType('donation')">
-                                <input type="radio" id="donation" name="saleType" value="donation" class="radio-input">
+                                <input type="radio" id="donation" name="saleType" value="donation" class="radio-input" required>
                                 <label for="donation" class="radio-label">
                                     <i class="bi bi-heart"></i> Donation (Free)
                                 </label>
                             </div>
                             <div class="radio-option" onclick="selectSaleType('discounted')">
-                                <input type="radio" id="discounted" name="saleType" value="discounted" class="radio-input">
+                                <input type="radio" id="discounted" name="saleType" value="discounted" class="radio-input" required>
                                 <label for="discounted" class="radio-label">
                                     <i class="bi bi-tag"></i> Discounted Sale
                                 </label>
@@ -507,37 +893,455 @@
                 <div class="form-section">
                     <h2 class="section-title">
                         <i class="bi bi-camera section-icon"></i>
-                        Item Photos
+                        <span id="imagesSectionTitle">Item Photos</span>
                     </h2>
-                    <div class="form-help" style="margin-bottom: 15px;">Add a good photo of your item. Good photos help buyers understand the condition and details.</div>
+                    <div class="form-help" style="margin-bottom: 15px;" id="imagesHelpText">Add up to 3 photos of your item. Good photos help buyers understand the condition and details.</div>
                     
                     <div class="image-upload-grid">
-                        <div class="image-upload-box" onclick="triggerFileInput(1)">
+                        <!-- Image 1 -->
+                        <div class="image-upload-box" onclick="triggerCloudinaryUpload(1)">
                             <i class="bi bi-camera upload-icon"></i>
-                            <div class="upload-text">Main Photo</div>
+                            <div class="upload-text" id="uploadText1">Main Photo</div>
                             <div class="upload-subtext">Click to upload</div>
-                            <button type="button" class="remove-image" onclick="removeImage(1, event)">×</button>
-                            <input type="file" id="image1" name="image1" class="file-input" accept="image/*" onchange="previewImage(1)">
+                            <button type="button" class="remove-image" onclick="removeCloudinaryImage(1, event)" style="display: none;">×</button>
+                            <input type="file" id="image1" name="image1" class="file-input" accept="image/*" style="display: none;">
+                            <img id="preview1" class="image-preview" style="display: none;">
+                        </div>
+                        
+                        <!-- Image 2 -->
+                        <div class="image-upload-box" onclick="triggerCloudinaryUpload(2)">
+                            <i class="bi bi-camera upload-icon"></i>
+                            <div class="upload-text" id="uploadText2">Photo 2</div>
+                            <div class="upload-subtext">Optional</div>
+                            <button type="button" class="remove-image" onclick="removeCloudinaryImage(2, event)" style="display: none;">×</button>
+                            <input type="file" id="image2" name="image2" class="file-input" accept="image/*" style="display: none;">
+                            <img id="preview2" class="image-preview" style="display: none;">
+                        </div>
+                        
+                        <!-- Image 3 -->
+                        <div class="image-upload-box" onclick="triggerCloudinaryUpload(3)">
+                            <i class="bi bi-camera upload-icon"></i>
+                            <div class="upload-text" id="uploadText3">Photo 3</div>
+                            <div class="upload-subtext">Optional</div>
+                            <button type="button" class="remove-image" onclick="removeCloudinaryImage(3, event)" style="display: none;">×</button>
+                            <input type="file" id="image3" name="image3" class="file-input" accept="image/*" style="display: none;">
+                            <img id="preview3" class="image-preview" style="display: none;">
                         </div>
                     </div>
                 </div>
 
-                <!-- Form Actions -->
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="navigateBack()">
-                        <i class="bi bi-arrow-left"></i>
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle"></i>
-                        List Item
+                <div class="submit-section">
+                    <button type="submit" class="submit-btn">
+                        <i class="bi bi-check-circle"></i> List Item
                     </button>
                 </div>
             </form>
         </div>
-    </main>
+    </div>
 
     <script>
+        // Global variables for software categories and tagify
+        let techStackTagify = null;
+        let softwareCategories = [];
+        let cloudinaryConfig = null;
+        let cloudinaryWidget = null;
+        let uploadedImages = {}; // Store Cloudinary URLs
+
+        // Tech stack whitelist for Tagify
+        const techStackWhitelist = [
+            // Programming Languages
+            "Python", "JavaScript", "Java", "C++", "C#", "PHP", "TypeScript", "Go", "Rust", "Swift", "Kotlin", "Dart", "Ruby", "Scala", "R", "MATLAB", "Perl", "Shell", "PowerShell",
+            
+            // Frontend Frameworks & Libraries
+            "React", "Vue.js", "Angular", "Next.js", "Nuxt.js", "Svelte", "jQuery", "Bootstrap", "Tailwind CSS", "Material-UI", "Ant Design", "Chakra UI", "Semantic UI",
+            
+            // Backend Frameworks
+            "Node.js", "Express.js", "Django", "Flask", "FastAPI", "Spring Boot", "Laravel", "ASP.NET", "Ruby on Rails", "Phoenix", "Gin", "Fiber", "Nest.js",
+            
+            // Mobile Development
+            "React Native", "Flutter", "Ionic", "Xamarin", "Cordova", "NativeScript", "Expo", "Kotlin Multiplatform",
+            
+            // Databases
+            "MySQL", "PostgreSQL", "MongoDB", "SQLite", "Redis", "Firebase", "Supabase", "MariaDB", "Oracle", "SQL Server", "DynamoDB", "Cassandra", "Neo4j",
+            
+            // Cloud & DevOps
+            "AWS", "Azure", "Google Cloud", "Docker", "Kubernetes", "Jenkins", "GitLab CI", "GitHub Actions", "Terraform", "Ansible", "Vagrant",
+            
+            // AI/ML & Data Science
+            "TensorFlow", "PyTorch", "Scikit-learn", "OpenCV", "Pandas", "NumPy", "Matplotlib", "Seaborn", "Jupyter", "Keras", "NLTK", "spaCy",
+            
+            // Game Development
+            "Unity", "Unreal Engine", "Godot", "Phaser", "Cocos2d", "GameMaker",
+            
+            // Desktop Development
+            "Electron", "Qt", "Tkinter", "PyQt", "WPF", "WinUI", "GTK", "JavaFX",
+            
+            // Tools & Others
+            "Git", "Webpack", "Vite", "Babel", "ESLint", "Prettier", "Jest", "Cypress", "Selenium", "Postman", "Figma", "Adobe XD"
+        ];
+
+        // Load Cloudinary configuration
+        async function loadCloudinaryConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const data = await response.json();
+                if (data.success && data.cloudinary) {
+                    cloudinaryConfig = data.cloudinary;
+                    console.log('☁️ Cloudinary configuration loaded:', cloudinaryConfig.cloudName);
+                    initializeCloudinaryWidget();
+                } else {
+                    console.error('❌ Failed to load Cloudinary configuration');
+                }
+            } catch (error) {
+                console.error('❌ Error loading Cloudinary configuration:', error);
+            }
+        }
+
+        // Initialize Cloudinary Upload Widget
+        function initializeCloudinaryWidget() {
+            if (!cloudinaryConfig || !window.cloudinary) {
+                console.error('❌ Cloudinary not available');
+                return;
+            }
+
+            cloudinaryWidget = window.cloudinary.createUploadWidget({
+                cloudName: cloudinaryConfig.cloudName,
+                uploadPreset: cloudinaryConfig.uploadPreset,
+                sources: ['local', 'camera'],
+                multiple: false,
+                maxFiles: 1,
+                maxFileSize: 10000000, // 10MB
+                maxImageWidth: 1920,
+                maxImageHeight: 1080,
+                cropping: false,
+                showAdvancedOptions: false,
+                showInsecurePreview: false,
+                showUploadMoreButton: false,
+                folder: 'educycle/products',
+                publicId: null,
+                transformation: [
+                    { width: 800, height: 600, crop: 'limit' },
+                    { quality: 'auto:good' },
+                    { format: 'auto' }
+                ]
+            }, (error, result) => {
+                if (!error && result && result.event === "success") {
+                    console.log('✅ Image uploaded successfully:', result.info.secure_url);
+                    handleCloudinaryUpload(result.info);
+                } else if (error) {
+                    console.error('❌ Cloudinary upload failed:', error);
+                    alert('Failed to upload image. Please try again.');
+                }
+            });
+
+            console.log('☁️ Cloudinary widget initialized');
+        }
+
+        // Handle successful Cloudinary upload
+        function handleCloudinaryUpload(info) {
+            const imageNumber = cloudinaryWidget.currentImageNumber;
+            if (!imageNumber) return;
+
+            // Store the uploaded image URL
+            uploadedImages[`image${imageNumber}`] = info.secure_url;
+
+            // Update the preview
+            const uploadBox = document.querySelector(`#image${imageNumber}`).parentElement;
+            const photoText = imageNumber === 1 ? 'Main Photo' : `Photo ${imageNumber}`;
+            
+            uploadBox.innerHTML = `
+                <img src="${info.secure_url}" alt="Preview" class="image-preview">
+                <div class="upload-text">${photoText}</div>
+                <div class="upload-subtext">Click to change • Uploaded to cloud</div>
+                <button type="button" class="remove-image" onclick="removeCloudinaryImage(${imageNumber}, event)">×</button>
+                <input type="file" id="image${imageNumber}" name="image${imageNumber}" class="file-input" accept="image/*" style="display: none;">
+            `;
+            uploadBox.classList.add('has-image');
+            uploadBox.setAttribute('onclick', `triggerCloudinaryUpload(${imageNumber})`);
+
+            console.log(`📷 Image ${imageNumber} preview updated with Cloudinary URL`);
+        }
+        async function loadSoftwareCategories() {
+            try {
+                const response = await fetch('/api/software-categories');
+                const data = await response.json();
+                if (data.success && data.categories && data.categories.length > 0) {
+                    softwareCategories = data.categories;
+                    renderSoftwareCategories();
+                    console.log('ðŸ“‚ Software categories loaded from API:', softwareCategories.length);
+                } else {
+                    console.error(' Failed to load software categories from API');
+                    if (softwareCategories.length > 0) {
+                        renderSoftwareCategories();
+                    }
+                }
+            } catch (error) {
+                console.error(' Error loading software categories:', error);
+                if (softwareCategories.length > 0) {
+                    renderSoftwareCategories();
+                }
+            }
+        }
+
+        // Fallback categories if API fails
+        function loadDefaultCategories() {
+            console.log('ðŸ”„ Loading default software categories...');
+            
+            softwareCategories = [
+                { category_id: 1, name: 'Web Development', icon: 'bi-globe', description: 'Web applications and tools' },
+                { category_id: 2, name: 'Mobile Development', icon: 'bi-phone', description: 'Mobile apps and development tools' },
+                { category_id: 3, name: 'Desktop Applications', icon: 'bi-laptop', description: 'Desktop software and utilities' },
+                { category_id: 4, name: 'Development Tools', icon: 'bi-code-slash', description: 'IDEs, editors, and development utilities' },
+                { category_id: 5, name: 'Data Science', icon: 'bi-graph-up', description: 'Data analysis and machine learning tools' },
+                { category_id: 6, name: 'Game Development', icon: 'bi-controller', description: 'Games and game development tools' },
+                { category_id: 7, name: 'Productivity', icon: 'bi-briefcase', description: 'Office tools and productivity software' },
+                { category_id: 8, name: 'Educational', icon: 'bi-book', description: 'Learning and educational software' },
+                { category_id: 9, name: 'Graphics & Design', icon: 'bi-palette', description: 'Design and graphics software' },
+                { category_id: 10, name: 'Security', icon: 'bi-shield-check', description: 'Security and privacy tools' },
+                { category_id: 11, name: 'Utilities', icon: 'bi-gear', description: 'System utilities and tools' },
+                { category_id: 12, name: 'Open Source', icon: 'bi-github', description: 'Open source projects' }
+            ];
+            
+            console.log(`… Default categories loaded: ${softwareCategories.length} categories`);
+            renderSoftwareCategories();
+        }
+
+        // Initialize Tagify for tech stack
+        function initializeTechStack() {
+            const techStackInput = document.getElementById('techStack');
+            if (techStackInput && !techStackTagify) {
+                techStackTagify = new Tagify(techStackInput, {
+                    whitelist: techStackWhitelist,
+                    maxTags: 10,
+                    dropdown: {
+                        maxItems: 20,
+                        classname: "tags-look",
+                        enabled: 0,
+                        closeOnSelect: false
+                    },
+                    editTags: false,
+                    placeholder: "Type to add technologies..."
+                });
+
+                console.log('ðŸ·ï¸ Tagify initialized for tech stack');
+            }
+        }
+
+        // Load user profile and auto-fill fields
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('/api/profile');
+                const data = await response.json();
+                if (data.success && data.user) {
+                    const developerNameField = document.getElementById('developerName');
+                    if (developerNameField && !developerNameField.value) {
+                        developerNameField.value = data.user.username;
+                    }
+                    
+                    const contactSupportField = document.getElementById('contactSupport');
+                    if (contactSupportField && !contactSupportField.value) {
+                        contactSupportField.value = data.user.email;
+                    }
+                    
+                    console.log('ðŸ‘¤ User profile loaded and fields auto-filled');
+                } else {
+                    console.log('š ï¸ User profile not available');
+                }
+            } catch (error) {
+                console.error(' Error loading user profile:', error);
+            }
+        }
+
+        // Call on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Page loaded, initializing components...');
+            loadCloudinaryConfig();
+            loadUserProfile();
+            loadDefaultCategories();
+            loadSoftwareCategories();
+            
+            // Add event listeners to radio buttons
+            const donationRadio = document.getElementById('donation');
+            const discountedRadio = document.getElementById('discounted');
+            
+            if (donationRadio) {
+                donationRadio.addEventListener('change', function() {
+                    if (this.checked) {
+                        selectSaleType('donation');
+                    }
+                });
+            }
+            
+            if (discountedRadio) {
+                discountedRadio.addEventListener('change', function() {
+                    if (this.checked) {
+                        selectSaleType('discounted');
+                    }
+                });
+            }
+            
+            console.log('✅ Initialization complete');
+        });
+
+        // Handle category change to show/hide software fields
+        function handleCategoryChange() {
+            const category = document.getElementById('category').value;
+            const standardFields = document.getElementById('standardFields');
+            const softwareFields = document.getElementById('softwareFields');
+            const imagesSectionTitle = document.getElementById('imagesSectionTitle');
+            const imagesHelpText = document.getElementById('imagesHelpText');
+            const uploadText1 = document.getElementById('uploadText1');
+            const uploadText2 = document.getElementById('uploadText2');
+            const uploadText3 = document.getElementById('uploadText3');
+
+            console.log('ðŸ”„ Category changed to:', category);
+
+            if (category === 'software') {
+                console.log('ðŸ’» Showing software fields and categories...');
+                
+                standardFields.style.display = 'none';
+                softwareFields.classList.add('show');
+                
+                imagesSectionTitle.textContent = 'Screenshots / Demo Images';
+                imagesHelpText.textContent = 'Add screenshots or demo images to help users preview your software. You can also include a demo video link in the fields above.';
+                uploadText1.textContent = 'Screenshot 1';
+                uploadText2.textContent = 'Screenshot 2';
+                uploadText3.textContent = 'Screenshot 3';
+
+                document.getElementById('softwareDescription').setAttribute('required', 'required');
+                document.getElementById('platform').setAttribute('required', 'required');
+                document.getElementById('selectedCategory').setAttribute('required', 'required');
+
+                document.getElementById('condition').removeAttribute('required');
+                document.getElementById('description').removeAttribute('required');
+
+                setTimeout(() => {
+                    initializeTechStack();
+                }, 100);
+
+                setTimeout(() => {
+                    renderSoftwareCategories();
+                }, 300);
+
+            } else {
+                console.log('ðŸ“ Showing standard fields, hiding software section...');
+                
+                standardFields.style.display = 'block';
+                softwareFields.classList.remove('show');
+                
+                imagesSectionTitle.textContent = 'Item Photos';
+                imagesHelpText.textContent = 'Add up to 3 photos of your item. Good photos help buyers understand the condition and details.';
+                uploadText1.textContent = 'Main Photo';
+                uploadText2.textContent = 'Photo 2';
+                uploadText3.textContent = 'Photo 3';
+
+                document.getElementById('condition').setAttribute('required', 'required');
+                document.getElementById('description').setAttribute('required', 'required');
+
+                document.getElementById('softwareDescription').removeAttribute('required');
+                document.getElementById('platform').removeAttribute('required');
+                document.getElementById('selectedCategory').removeAttribute('required');
+            }
+        }
+
+        // Render software categories
+        function renderSoftwareCategories() {
+            const categoryGrid = document.getElementById('softwareCategoryGrid');
+            if (!categoryGrid) {
+                console.error(' Software category grid not found');
+                return;
+            }
+
+            categoryGrid.innerHTML = '';
+            
+            if (!softwareCategories || softwareCategories.length === 0) {
+                console.warn('š ï¸ No software categories to render');
+                categoryGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #666; padding: 20px;">Loading categories...</div>';
+                return;
+            }
+
+            console.log(`ðŸ“‚ Rendering ${softwareCategories.length} software categories for mobile/desktop`);
+            
+            categoryGrid.innerHTML = softwareCategories.map(category => `
+                <div class="category-option" data-category-id="${category.category_id}" data-category-name="${category.name}">
+                    <i class="${category.icon} category-icon"></i>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 500; font-size: 0.9rem; word-wrap: break-word;">${category.name}</div>
+                        <div style="font-size: 0.75rem; color: #666; line-height: 1.2; margin-top: 2px; word-wrap: break-word;">${category.description || ''}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.querySelectorAll('.category-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    selectSoftwareCategory(this.dataset.categoryId, this.dataset.categoryName);
+                });
+            });
+            
+            console.log('… Software categories rendered successfully');
+        }
+
+        // Select software category
+        function selectSoftwareCategory(categoryId, categoryName) {
+            document.querySelectorAll('.category-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            const clickedOption = document.querySelector(`[data-category-id="${categoryId}"]`);
+            if (clickedOption) {
+                clickedOption.classList.add('selected');
+            }
+            
+            document.getElementById('selectedCategory').value = categoryId;
+            console.log('ðŸ“‚ Software category selected:', categoryName);
+        }
+
+        // Sale type selection
+        function selectSaleType(type) {
+            console.log('🏷️ Selecting sale type:', type);
+            
+            // Remove selected class from all options
+            document.querySelectorAll('.radio-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add selected class to the clicked option
+            const clickedOption = document.querySelector(`.radio-option[onclick="selectSaleType('${type}')"]`);
+            if (clickedOption) {
+                clickedOption.classList.add('selected');
+            }
+            
+            // Set the radio button as checked
+            const radioButton = document.getElementById(type);
+            if (radioButton) {
+                radioButton.checked = true;
+                console.log('✅ Radio button checked:', type);
+            }
+            
+            // Handle price section visibility
+            const priceSection = document.getElementById('priceSection');
+            const freeSection = document.getElementById('freeSection');
+            
+            if (type === 'donation') {
+                priceSection.classList.remove('show');
+                freeSection.classList.add('show');
+                const priceInput = document.getElementById('price');
+                if (priceInput) {
+                    priceInput.removeAttribute('required');
+                    priceInput.value = ''; // Clear price
+                }
+                console.log('💝 Donation selected - price not required');
+            } else {
+                priceSection.classList.add('show');
+                freeSection.classList.remove('show');
+                const priceInput = document.getElementById('price');
+                if (priceInput) {
+                    priceInput.setAttribute('required', 'required');
+                }
+                console.log('💰 Discounted sale selected - price required');
+            }
+        }
+
         // Navigation function to go back to My Items
         function navigateBack() {
             if (window.parent && window.parent !== window) {
@@ -546,281 +1350,235 @@
                     page: 'myitems.html'
                 }, '*');
             } else {
-                // Fallback if not in iframe
                 window.history.back();
-            }
-        }
-
-        // Sale type selection
-        function selectSaleType(type) {
-            // Remove selected class from all options
-            document.querySelectorAll('.radio-option').forEach(option => {
-                option.classList.remove('selected');
-            });
-            
-            // Add selected class to clicked option
-            event.currentTarget.classList.add('selected');
-            
-            // Check the radio button
-            document.getElementById(type).checked = true;
-            
-            // Show/hide price sections
-            const priceSection = document.getElementById('priceSection');
-            const freeSection = document.getElementById('freeSection');
-            
-            if (type === 'donation') {
-                priceSection.classList.remove('show');
-                freeSection.classList.add('show');
-                document.getElementById('price').removeAttribute('required');
-            } else {
-                priceSection.classList.add('show');
-                freeSection.classList.remove('show');
-                document.getElementById('price').setAttribute('required', 'required');
             }
         }
 
         // Image upload functions
         function triggerFileInput(number) {
-            document.getElementById(`image${number}`).click();
+            triggerCloudinaryUpload(number);
         }
 
-        // Image compression function
-        async function compressImage(file, targetSize = 60 * 1024) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                const reader = new FileReader();
-
-                reader.onload = (event) => {
-                    img.src = event.target.result;
-                };
-
-                img.onload = async () => {
-                    const canvas = document.createElement("canvas");
-                    const ctx = canvas.getContext("2d");
-
-                    // Calculate scaling factor to maintain aspect ratio
-                    let scale = 0.8;
-                    
-                    // If image is very large, scale it down more
-                    if (img.width > 1200 || img.height > 1200) {
-                        scale = Math.min(1200 / img.width, 1200 / img.height);
-                    }
-
-                    canvas.width = Math.floor(img.width * scale);
-                    canvas.height = Math.floor(img.height * scale);
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                    // Binary search for optimal quality
-                    let minQ = 0.1, maxQ = 1.0, bestBlob = null;
-
-                    while (minQ <= maxQ) {
-                        const q = (minQ + maxQ) / 2;
-                        const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", q));
-
-                        if (blob.size > targetSize) {
-                            maxQ = q - 0.01;
-                        } else {
-                            minQ = q + 0.01;
-                            bestBlob = blob;
-                        }
-                    }
-
-                    if (bestBlob) {
-                        const compressedDataUrl = await new Promise(res => {
-                            const reader = new FileReader();
-                            reader.onload = () => res(reader.result);
-                            reader.readAsDataURL(bestBlob);
-                        });
-                        resolve({
-                            dataUrl: compressedDataUrl,
-                            size: bestBlob.size,
-                            success: true
-                        });
-                    } else {
-                        // If unable to compress to target size, return original
-                        resolve({
-                            dataUrl: event.target.result,
-                            size: file.size,
-                            success: false
-                        });
-                    }
-                };
-
-                reader.readAsDataURL(file);
-            });
-        }
-
-        async function previewImage(number) {
-            const file = document.getElementById(`image${number}`).files[0];
-            const uploadBox = document.querySelector(`#image${number}`).parentElement;
-            
-            if (file) {
-                // Show loading state
-                uploadBox.innerHTML = `
-                    <i class="bi bi-hourglass-split upload-icon" style="color: #ff9900;"></i>
-                    <div class="upload-text">Compressing...</div>
-                    <div class="upload-subtext">Please wait</div>
-                    <input type="file" id="image${number}" name="image${number}" class="file-input" accept="image/*" onchange="previewImage(${number})">
-                `;
-
-                try {
-                    // Compress the image
-                    const compressed = await compressImage(file);
-                    
-                    // Update the UI with compressed image
-                    const sizeText = compressed.success 
-                        ? `${(compressed.size / 1024).toFixed(1)} KB` 
-                        : `${(compressed.size / 1024).toFixed(1)} KB (original)`;
-                    
-                    uploadBox.innerHTML = `
-                        <img src="${compressed.dataUrl}" alt="Preview" class="image-preview">
-                        <div class="upload-text">Main Photo</div>
-                        <div class="upload-subtext">Click to change • ${sizeText}</div>
-                        <button type="button" class="remove-image" onclick="removeImage(${number}, event)">×</button>
-                        <input type="file" id="image${number}" name="image${number}" class="file-input" accept="image/*" onchange="previewImage(${number})">
-                    `;
-                    uploadBox.classList.add('has-image');
-                    uploadBox.setAttribute('onclick', `triggerFileInput(${number})`);
-
-                    // Store compressed data URL for later use
-                    uploadBox.dataset.compressedData = compressed.dataUrl;
-                    
-                } catch (error) {
-                    console.error('Error compressing image:', error);
-                    // Fallback to original image
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        uploadBox.innerHTML = `
-                            <img src="${e.target.result}" alt="Preview" class="image-preview">
-                            <div class="upload-text">Main Photo</div>
-                            <div class="upload-subtext">Click to change • Original size</div>
-                            <button type="button" class="remove-image" onclick="removeImage(${number}, event)">×</button>
-                            <input type="file" id="image${number}" name="image${number}" class="file-input" accept="image/*" onchange="previewImage(${number})">
-                        `;
-                        uploadBox.classList.add('has-image');
-                        uploadBox.setAttribute('onclick', `triggerFileInput(${number})`);
-                        uploadBox.dataset.compressedData = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
+        // Trigger Cloudinary upload
+        function triggerCloudinaryUpload(number) {
+            if (!cloudinaryWidget) {
+                console.error('❌ Cloudinary widget not initialized');
+                alert('Image upload service is not ready. Please refresh the page.');
+                return;
             }
+
+            // Store the current image number for the callback
+            cloudinaryWidget.currentImageNumber = number;
+            cloudinaryWidget.open();
         }
 
-        function removeImage(number, event) {
+        // Remove Cloudinary image
+        function removeCloudinaryImage(number, event) {
             event.stopPropagation();
+            
+            // Remove from uploaded images
+            delete uploadedImages[`image${number}`];
+            
             const uploadBox = document.querySelector(`#image${number}`).parentElement;
+            const photoText = number === 1 ? 'Main Photo' : `Photo ${number}`;
             
             uploadBox.innerHTML = `
                 <i class="bi bi-camera upload-icon"></i>
-                <div class="upload-text">Main Photo</div>
-                <div class="upload-subtext">Click to upload</div>
-                <button type="button" class="remove-image" onclick="removeImage(${number}, event)">×</button>
-                <input type="file" id="image${number}" name="image${number}" class="file-input" accept="image/*" onchange="previewImage(${number})">
+                <div class="upload-text">${photoText}</div>
+                <div class="upload-subtext">${number === 1 ? 'Click to upload' : 'Optional'}</div>
+                <button type="button" class="remove-image" onclick="removeCloudinaryImage(${number}, event)" style="display: none;">×</button>
+                <input type="file" id="image${number}" name="image${number}" class="file-input" accept="image/*" style="display: none;">
             `;
             uploadBox.classList.remove('has-image');
-            uploadBox.setAttribute('onclick', `triggerFileInput(${number})`);
+            uploadBox.setAttribute('onclick', `triggerCloudinaryUpload(${number})`);
             
-            // Clear compressed data
-            delete uploadBox.dataset.compressedData;
+            console.log(`🗑️ Image ${number} removed`);
         }
 
-        // Helper function to get image base64 data
+        // Helper function to get image URLs (now returns Cloudinary URLs)
         function getImageData(number) {
-            const uploadBox = document.querySelector(`#image${number}`).parentElement;
-            
-            // First check if we have compressed data stored
-            if (uploadBox.dataset.compressedData) {
-                return uploadBox.dataset.compressedData;
-            }
-            
-            // Fallback to image element source
-            const imageElement = uploadBox.querySelector('img');
-            if (imageElement && imageElement.src && imageElement.src.startsWith('data:')) {
-                return imageElement.src;
-            }
-            return null;
+            return uploadedImages[`image${number}`] || null;
         }
 
-        // Form submission
+        // Form submission handler
         document.getElementById('listItemForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Get form data
-            const formData = new FormData(this);
-            const saleType = formData.get('saleType');
-            
+            console.log('🚀 Starting form submission...');
+
+            // Get basic form values
+            const saleType = document.querySelector('input[name="saleType"]:checked')?.value;
+            const category = document.getElementById('category').value;
+            const itemName = document.getElementById('itemName').value.trim();
+
+            // Basic validation
             if (!saleType) {
                 alert('Please select a sale type (Donation or Discounted Sale)');
                 return;
             }
-            
-            // Prepare data for submission
-            const productData = {
-                name: formData.get('itemName'),
-                description: formData.get('description'),
-                category: formData.get('category'),
-                condition: formData.get('condition'),
-                price: saleType === 'donation' ? 0 : formData.get('price'),
-                image1: getImageData(1)
-            };
 
-            // Debug: Log the image data status
-            console.log('Image data status:', {
-                image1: productData.image1 ? 'Has data' : 'No data'
-            });
-
-            // Validate required fields
-            if (!productData.name || !productData.description || !productData.category || !productData.condition) {
-                alert('Please fill in all required fields');
+            if (!category) {
+                alert('Please select a category');
                 return;
             }
 
-            if (saleType === 'discounted' && (!productData.price || productData.price <= 0)) {
+            if (!itemName) {
+                alert('Please enter an item name');
+                return;
+            }
+
+            // Category-specific validation
+            let description, condition, platform, selectedCategory;
+
+            if (category === 'software') {
+                // Software product validation
+                description = document.getElementById('softwareDescription').value.trim();
+                platform = document.getElementById('platform').value;
+                selectedCategory = document.getElementById('selectedCategory').value;
+
+                if (!description) {
+                    alert('Please provide a description for your software');
+                    return;
+                }
+
+                if (!platform) {
+                    alert('Please select a platform for your software');
+                    return;
+                }
+
+                if (!selectedCategory) {
+                    alert('Please select a software category');
+                    return;
+                }
+
+                console.log('✅ Software product validation passed');
+            } else {
+                // Regular product validation
+                description = document.getElementById('description').value.trim();
+                condition = document.getElementById('condition').value;
+
+                if (!description) {
+                    alert('Please provide a description for your item');
+                    return;
+                }
+
+                if (!condition) {
+                    alert('Please select the condition of your item');
+                    return;
+                }
+
+                console.log('✅ Regular product validation passed');
+            }
+
+            // Price validation
+            const price = saleType === 'donation' ? 0 : parseFloat(document.getElementById('price').value);
+            if (saleType === 'discounted' && (!price || price <= 0)) {
                 alert('Please enter a valid price for discounted sale');
                 return;
             }
 
-            console.log('Submitting product data:', productData); // Debug log
+            // Collect image URLs (Cloudinary URLs)
+            const imageUrls = {};
+            for (let i = 1; i <= 3; i++) {
+                const imageUrl = getImageData(i);
+                if (imageUrl) {
+                    imageUrls[`image${i}`] = imageUrl;
+                }
+            }
+
+            console.log(`📸 Found ${Object.keys(imageUrls).length} images to submit:`, imageUrls);
 
             try {
                 // Show loading state
                 const submitBtn = this.querySelector('button[type="submit"]');
                 const originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Adding Item...';
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting...';
                 submitBtn.disabled = true;
 
+                // Prepare form data based on category
+                let formData = {
+                    name: itemName,
+                    category,
+                    saleType,
+                    price,
+                    imageUrls
+                };
+
+                if (category === 'software') {
+                    // Get tech stack from Tagify
+                    const techStackValue = techStackTagify ? 
+                        techStackTagify.value.map(tag => tag.value).join(', ') : 
+                        document.getElementById('techStack').value;
+                    
+                    // Add software-specific fields
+                    formData = {
+                        ...formData,
+                        description,
+                        tagline: document.getElementById('tagline').value.trim(),
+                        platform,
+                        version: document.getElementById('version').value.trim() || '1.0.0',
+                        techStack: techStackValue,
+                        developerName: document.getElementById('developerName').value.trim(),
+                        licenseType: document.getElementById('licenseType').value,
+                        downloadLink: document.getElementById('downloadLink').value.trim(),
+                        demoLink: document.getElementById('demoLink').value.trim(),
+                        githubLink: document.getElementById('githubLink').value.trim(),
+                        documentationLink: document.getElementById('documentationLink').value.trim(),
+                        features: document.getElementById('features').value.trim(),
+                        systemRequirements: document.getElementById('systemRequirements').value.trim(),
+                        categoryId: selectedCategory,
+                        contactSupport: document.getElementById('contactSupport').value.trim(),
+                        condition: 'New' // Default for software
+                    };
+                } else {
+                    // Add regular product fields
+                    formData = {
+                        ...formData,
+                        description,
+                        condition
+                    };
+                }
+
+                console.log('📤 Submitting form data:', formData);
+
+                // Define productType for use in both success and error cases
+                const productType = category === 'software' ? 'software' : 'item';
+
                 // Submit to backend
-                const response = await fetch('/api/add-product', {
+                const response = await fetch('/api/add-product-direct', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(productData)
+                    body: JSON.stringify(formData)
                 });
 
                 const result = await response.json();
+                console.log('📨 Server response:', result);
 
                 // Restore button
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
 
                 if (result.success) {
-                    alert('Item listed successfully! You will be redirected to your items page.');
+                    const imageCount = Object.keys(imageUrls).length;
+                    const imageText = imageCount > 0 ? ` with ${imageCount} image(s)` : '';
                     
-                    // Navigate back to My Items in parent dashboard
+                    alert(`${productType} listed successfully${imageText}! You will be redirected to your items page.`);
+
+                    // Navigate back to My Items
                     if (window.parent && window.parent !== window) {
                         window.parent.postMessage({
                             type: 'navigate',
                             page: 'myitems.html'
                         }, '*');
                     } else {
-                        // Fallback if not in iframe
                         window.location.href = 'myitems.html';
                     }
                 } else {
+                    console.error('❌ Submission failed:', result.message);
                     if (response.status === 401) {
                         alert('Please log in to add items');
-                        // Redirect to login if needed
                         if (window.parent && window.parent !== window) {
                             window.parent.postMessage({
                                 type: 'navigate',
@@ -830,16 +1588,17 @@
                             window.location.href = 'login.html';
                         }
                     } else {
-                        alert(result.message || 'Failed to add item. Please try again.');
+                        alert(`Failed to list ${productType}: ${result.message}`);
                     }
                 }
+
             } catch (error) {
-                console.error('Error submitting product:', error);
-                alert('Failed to add item. Please check your connection and try again.');
+                console.error('💥 Submission error:', error);
+                alert('Error submitting form: ' + error.message);
                 
-                // Restore button
+                // Restore button on error
                 const submitBtn = this.querySelector('button[type="submit"]');
-                submitBtn.innerHTML = originalText;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> List Item';
                 submitBtn.disabled = false;
             }
         });
@@ -857,3 +1616,6 @@
     </script>
 </body>
 </html>
+
+
+

@@ -1080,7 +1080,17 @@
         // Listen for messages from iframe to handle internal navigation
         window.addEventListener('message', function(event) {
             if (event.data.type === 'navigate') {
-                loadPage(event.data.page, document.querySelector(`[onclick*="${event.data.page}"]`));
+                if (event.data.page) {
+                    // Old style navigation with page name
+                    loadPage(event.data.page, document.querySelector(`[onclick*="${event.data.page}"]`));
+                } else if (event.data.url) {
+                    // New style navigation with full URL
+                    const iframe = document.getElementById('mainFrame');
+                    if (iframe) {
+                        iframe.src = event.data.url;
+                        console.log('🔄 Navigating iframe to:', event.data.url);
+                    }
+                }
             } else if (event.data.type === 'cartUpdated') {
                 // Handle cart updates from iframe
                 console.log('🛒 Cart updated from iframe:', event.data);

@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Details - EduCycle</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #0f1111;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Software Hero Section */
+        .software-hero {
+            background: linear-gradient(135deg, #232f3e 0%, #37475a 100%);
+            color: white;
+            padding: 60px 40px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .software-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+            animation: float 20s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0% { transform: translateX(-50px) translateY(-50px); }
+            100% { transform: translateX(50px) translateY(50px); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        .hero-main h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            margin-bottom: 20px;
+            line-height: 1.1;
+        }
+
+        .hero-tagline {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .tech-badges {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .tech-badge {
+            background: rgba(255, 153, 0, 0.2);
+            color: #ff9900;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid rgba(255, 153, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-hero-primary {
+            background: #ff9900;
+            color: #232f3e;
+            padding: 15px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-hero-primary:hover {
+            background: #fa8900;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 153, 0, 0.4);
+        }
+
+        .btn-hero-secondary {
+            background: transparent;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-hero-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .hero-preview {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 4rem;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .preview-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .slideshow-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .slideshow-dots {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .dot.active {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .preview-text {
+            text-align: center;
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        /* Main Content Grid */
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 40px;
+        }
+
+        /* Left Column - Details */
+        .software-details {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .detail-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .detail-tab {
+            flex: 1;
+            padding: 20px;
+            background: none;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .detail-tab.active {
+            color: #232f3e;
+            background: white;
+            border-bottom-color: #ff9900;
+        }
+
+        .detail-tab:hover {
+            color: #232f3e;
+            background: #f1f3f4;
+        }
+
+        .tab-content {
+            padding: 30px;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .tab-panel h3 {
+            color: #232f3e;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 12px 0;
+            padding-left: 30px;
+            position: relative;
+            color: #333;
+            font-size: 1rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .system-requirements {
+            display: grid;
+            gap: 15px;
+        }
+
+        .req-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #ff9900;
+        }
+
+        .req-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .req-value {
+            color: #666;
+            text-align: right;
+        }
+
+        /* Right Column - Sidebar */
+        .software-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* Price Card */
+        .price-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 2px solid #f0f0f0;
+        }
+
+        .software-price-display {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: #b12704;
+            margin-bottom: 10px;
+        }
+
+        .price-label {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 25px;
+        }
+
+        .free-label {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+
+        .download-btn {
+            width: 100%;
+            background: #ff9900;
+            color: #232f3e;
+            padding: 18px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .download-btn:hover {
+            background: #fa8900;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 153, 0, 0.3);
+        }
+
+        .demo-btn {
+            width: 100%;
+            background: transparent;
+            color: #007185;
+            padding: 15px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 2px solid #007185;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .demo-btn:hover {
+            background: #007185;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* Specifications Card */
+        .specs-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .specs-card h3 {
+            color: #232f3e;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .spec-row:last-child {
+            border-bottom: none;
+        }
+
+        .spec-label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .spec-value {
+            color: #333;
+            text-align: right;
+            font-weight: 500;
+        }
+
+        /* Developer Card */
+        .developer-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .developer-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .developer-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff9900, #fa8900);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .developer-info h4 {
+            color: #232f3e;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .developer-title {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .developer-stats {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .dev-stat {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .dev-stat-number {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #232f3e;
+        }
+
+        .dev-stat-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .contact-btn {
+            width: 100%;
+            background: #232f3e;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .contact-btn:hover {
+            background: #37475a;
+            transform: translateY(-1px);
+        }
+
+        /* Loading States */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff9900;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Messages */
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .software-hero {
+                padding: 40px 25px;
+            }
+
+            .hero-main h1 {
+                font-size: 2.2rem;
+            }
+
+            .hero-tagline {
+                font-size: 1.1rem;
+            }
+
+            .detail-tabs {
+                flex-direction: column;
+            }
+
+            .detail-tab {
+                border-bottom: 1px solid #dee2e6;
+                border-radius: 0;
+            }
+
+            .detail-tab.active {
+                border-bottom-color: #ff9900;
+                border-left: 3px solid #ff9900;
+            }
+
+            .tab-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Software Hero Section -->
+        <div class="software-hero">
+            <div class="hero-content">
+                <div class="hero-main">
+                    <h1 id="softwareTitle">Loading Software...</h1>
+                    <div class="hero-tagline" id="softwareTagline">
+                        Professional software solution for your needs
+                    </div>
+                    <div class="tech-badges" id="techBadges">
+                        <!-- Tech badges will be populated here -->
+                    </div>
+                    <div class="hero-actions">
+                        <button class="btn-hero-primary" onclick="downloadSoftware()">
+                            <i class="bi bi-download"></i>
+                            Download Now
+                        </button>
+                        <button class="btn-hero-secondary" onclick="tryDemo()">
+                            <i class="bi bi-play-circle"></i>
+                            Try Demo
+                        </button>
+                    </div>
+                </div>
+                <div class="hero-preview">
+                    <div class="preview-image" id="previewImage">
+                        <i class="bi bi-laptop"></i>
+                    </div>
+                    <div class="preview-text">Software Preview</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Column - Software Details -->
+            <div class="software-details">
+                <div class="detail-tabs">
+                    <button class="detail-tab active" onclick="switchTab('overview')">
+                        <i class="bi bi-info-circle"></i>
+                        Overview
+                    </button>
+                    <button class="detail-tab" onclick="switchTab('features')">
+                        <i class="bi bi-list-stars"></i>
+                        Features
+                    </button>
+                    <button class="detail-tab" onclick="switchTab('requirements')">
+                        <i class="bi bi-gear"></i>
+                        Requirements
+                    </button>
+                </div>
+                
+                <div class="tab-content">
+                    <div class="tab-panel active" id="overview">
+                        <h3>About this Software</h3>
+                        <div id="softwareDescription">
+                            Loading description...
+                        </div>
+                    </div>
+                    
+                    <div class="tab-panel" id="features">
+                        <h3>Key Features</h3>
+                        <ul class="feature-list" id="featuresList">
+                            <!-- Features will be populated here -->
+                        </ul>
+                    </div>
+                    
+                    <div class="tab-panel" id="requirements">
+                        <h3>System Requirements</h3>
+                        <div class="system-requirements" id="systemRequirements">
+                            <!-- Requirements will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Sidebar -->
+            <div class="software-sidebar">
+                <!-- Price Card -->
+                <div class="price-card">
+                    <div id="priceDisplay">
+                        <div class="software-price-display" id="softwarePrice">₹0</div>
+                        <div class="price-label">One-time Purchase</div>
+                    </div>
+                    <div id="freeDisplay" style="display: none;">
+                        <div class="free-label">FREE</div>
+                        <div class="price-label">Open Source</div>
+                    </div>
+                    
+                    <button class="download-btn" onclick="downloadSoftware()">
+                        <i class="bi bi-download"></i>
+                        Download
+                    </button>
+                    <button class="demo-btn" onclick="tryDemo()">
+                        <i class="bi bi-play-circle"></i>
+                        Try Demo
+                    </button>
+                </div>
+
+                <!-- Specifications -->
+                <div class="specs-card">
+                    <h3><i class="bi bi-info-circle"></i> Specifications</h3>
+                    <div id="specsList">
+                        <!-- Specs will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Developer Info -->
+                <div class="developer-card">
+                    <div class="developer-header">
+                        <div class="developer-avatar" id="developerAvatar">D</div>
+                        <div class="developer-info">
+                            <h4 id="developerName">Loading...</h4>
+                            <div class="developer-title">Software Developer</div>
+                        </div>
+                    </div>
+                    
+                    <div class="developer-stats">
+                        <div class="dev-stat">
+                            <div class="dev-stat-number" id="totalDownloads">0</div>
+                            <div class="dev-stat-label">Downloads</div>
+                        </div>
+                    </div>
+                    
+                    <button class="contact-btn" onclick="contactDeveloper()">
+                        <i class="bi bi-chat-dots"></i>
+                        Contact Developer
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="message success" id="successMessage">
+            <i class="bi bi-check-circle"></i> <span id="successText"></span>
+        </div>
+        <div class="message error" id="errorMessage">
+            <i class="bi bi-exclamation-circle"></i> <span id="errorText"></span>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div>Loading software details...</div>
+    </div>
+
+    <script>
+        let currentSoftware = null;
+        let slideshowInterval = null;
+        let currentSlide = 0;
+        let softwareImages = [];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSoftwareDetails();
+        });
+
+        // Load software details from database
+        function loadSoftwareDetails() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const softwareId = urlParams.get('id');
+            
+            if (!softwareId) {
+                showMessage('error', 'Software ID not provided');
+                document.getElementById('loadingOverlay').style.display = 'none';
+                return;
+            }
+            
+            // Fetch software details from API
+            fetch(`/api/software/${softwareId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Handle both 'software' and 'product' response formats
+                        const software = data.software || data.product;
+                        displaySoftware(software);
+                    } else {
+                        showMessage('error', data.message || 'Software not found');
+                    }
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error loading software:', error);
+                    showMessage('error', 'Failed to load software details');
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                });
+        }
+
+        // Display software information
+        function displaySoftware(software) {
+            currentSoftware = software;
+            
+            // Hero section
+            document.getElementById('softwareTitle').textContent = software.name || 'Unknown Software';
+            document.getElementById('softwareTagline').textContent = software.tagline || software.description || 'Professional software solution for your needs';
+            
+            // Tech badges
+            const badgesContainer = document.getElementById('techBadges');
+            badgesContainer.innerHTML = '';
+            if (software.tech_stack && software.tech_stack.trim() !== '') {
+                const techArray = software.tech_stack.split(',').map(tech => tech.trim()).filter(tech => tech);
+                techArray.forEach(tech => {
+                    const badge = document.createElement('span');
+                    badge.className = 'tech-badge';
+                    badge.textContent = tech;
+                    badgesContainer.appendChild(badge);
+                });
+            } else {
+                // Default tech badges if none provided
+                const defaultTech = ['Software', 'Application'];
+                defaultTech.forEach(tech => {
+                    const badge = document.createElement('span');
+                    badge.className = 'tech-badge';
+                    badge.textContent = tech;
+                    badgesContainer.appendChild(badge);
+                });
+            }
+            
+            // Preview image with slideshow
+            const previewImage = document.getElementById('previewImage');
+            softwareImages = [];
+            
+            // Check if images array is available (from API response)
+            if (software.images && Array.isArray(software.images) && software.images.length > 0) {
+                softwareImages = software.images.filter(img => img && img.trim() !== '');
+            } else {
+                // Fallback: Collect individual image URL fields
+                if (software.image1_url && software.image1_url.trim() !== '') {
+                    softwareImages.push(software.image1_url);
+                }
+                if (software.image2_url && software.image2_url.trim() !== '') {
+                    softwareImages.push(software.image2_url);
+                }
+                if (software.image3_url && software.image3_url.trim() !== '') {
+                    softwareImages.push(software.image3_url);
+                }
+            }
+            
+            // Setup slideshow or single image
+            if (softwareImages.length > 0) {
+                setupImageSlideshow(softwareImages);
+            } else {
+                previewImage.innerHTML = '<i class="bi bi-laptop"></i>';
+            }
+            
+            // Price
+            const price = parseFloat(software.price || 0);
+            if (price === 0) {
+                document.getElementById('priceDisplay').style.display = 'none';
+                document.getElementById('freeDisplay').style.display = 'block';
+            } else {
+                document.getElementById('softwarePrice').textContent = `₹${price.toFixed(2)}`;
+                document.getElementById('priceDisplay').style.display = 'block';
+                document.getElementById('freeDisplay').style.display = 'none';
+            }
+            
+            // Description
+            document.getElementById('softwareDescription').innerHTML = `
+                <p style="margin-bottom: 15px;">${software.description || 'No description available.'}</p>
+                ${software.tagline && software.tagline !== software.description ? `<p style="font-style: italic; color: #666;">${software.tagline}</p>` : ''}
+            `;
+            
+            // Features
+            const featuresContainer = document.getElementById('featuresList');
+            featuresContainer.innerHTML = '';
+            let features = [];
+            
+            if (software.features && software.features.trim() !== '') {
+                try {
+                    // Try to parse as JSON first
+                    features = JSON.parse(software.features);
+                } catch (e) {
+                    // If not JSON, try comma-separated values
+                    features = software.features.split(',').map(f => f.trim()).filter(f => f);
+                }
+            }
+            
+            // If no features provided, use defaults
+            if (features.length === 0) {
+                features = [
+                    'Cross-platform compatibility', 
+                    'User-friendly interface', 
+                    'Regular updates available', 
+                    'Technical support included',
+                    'Documentation provided'
+                ];
+            }
+            
+            features.forEach(feature => {
+                const li = document.createElement('li');
+                li.textContent = feature;
+                featuresContainer.appendChild(li);
+            });
+            
+            // System Requirements
+            const reqContainer = document.getElementById('systemRequirements');
+            let requirements = {};
+            
+            if (software.system_requirements && software.system_requirements.trim() !== '') {
+                try {
+                    // Try to parse as JSON first
+                    requirements = JSON.parse(software.system_requirements);
+                } catch (e) {
+                    // If not JSON, treat as general requirement
+                    requirements = { general: software.system_requirements };
+                }
+            } else {
+                // Default requirements
+                requirements = {
+                    os: software.platform || 'Windows 10+, macOS 10.14+, Ubuntu 18.04+',
+                    ram: '4GB minimum, 8GB recommended',
+                    storage: '500MB available space',
+                    processor: 'Intel i3 or AMD equivalent'
+                };
+            }
+            
+            reqContainer.innerHTML = Object.entries(requirements).map(([key, value]) => `
+                <div class="req-item">
+                    <span class="req-label">${key.toUpperCase().replace('_', ' ')}:</span>
+                    <span class="req-value">${value}</span>
+                </div>
+            `).join('');
+            
+            // Specifications
+            const specsContainer = document.getElementById('specsList');
+            const specs = [
+                { label: 'Version', value: software.version || '1.0.0' },
+                { label: 'License', value: software.license_type || 'Standard License' },
+                { label: 'Platform', value: software.platform || 'Cross-platform' },
+                { label: 'Developer', value: software.developer_name || 'Unknown Developer' },
+                { label: 'Downloads', value: (software.downloads_count || 0).toLocaleString() },
+                { label: 'Views', value: (software.views_count || 0).toLocaleString() },
+                { label: 'Released', value: formatDate(software.created_at) }
+            ];
+            
+            specsContainer.innerHTML = specs.map(spec => `
+                <div class="spec-row">
+                    <span class="spec-label">${spec.label}:</span>
+                    <span class="spec-value">${spec.value}</span>
+                </div>
+            `).join('');
+            
+            // Developer info
+            const developerName = software.developer_name || software.seller_name || 'Unknown Developer';
+            document.getElementById('developerName').textContent = developerName;
+            document.getElementById('developerAvatar').textContent = developerName.charAt(0).toUpperCase();
+            document.getElementById('totalDownloads').textContent = (software.downloads_count || 0).toLocaleString();
+        }
+
+        // Setup image slideshow
+        function setupImageSlideshow(images) {
+            const previewImage = document.getElementById('previewImage');
+            
+            if (images.length === 1) {
+                // Single image - no slideshow needed
+                previewImage.innerHTML = `<img src="${images[0]}" alt="Software Preview" onerror="this.parentElement.innerHTML='<i class=\\"bi bi-laptop\\"></i>'">`;
+                return;
+            }
+            
+            // Multiple images - create slideshow
+            let slideshowHTML = '<div class="slideshow-container">';
+            
+            images.forEach((imageUrl, index) => {
+                slideshowHTML += `
+                    <div class="slide ${index === 0 ? 'active' : ''}" data-slide="${index}">
+                        <img src="${imageUrl}" alt="Software Preview ${index + 1}" onerror="this.style.display='none'">
+                    </div>
+                `;
+            });
+            
+            // Add dots for navigation if more than one image
+            if (images.length > 1) {
+                slideshowHTML += '<div class="slideshow-dots">';
+                images.forEach((_, index) => {
+                    slideshowHTML += `<span class="dot ${index === 0 ? 'active' : ''}" onclick="goToSlide(${index})"></span>`;
+                });
+                slideshowHTML += '</div>';
+            }
+            
+            slideshowHTML += '</div>';
+            previewImage.innerHTML = slideshowHTML;
+            
+            // Start automatic slideshow
+            if (images.length > 1) {
+                startSlideshow();
+            }
+        }
+
+        // Start automatic slideshow
+        function startSlideshow() {
+            if (slideshowInterval) {
+                clearInterval(slideshowInterval);
+            }
+            
+            slideshowInterval = setInterval(() => {
+                nextSlide();
+            }, 5000); // Change slide every 5 seconds
+        }
+
+        // Go to next slide
+        function nextSlide() {
+            if (softwareImages.length <= 1) return;
+            
+            currentSlide = (currentSlide + 1) % softwareImages.length;
+            showSlide(currentSlide);
+        }
+
+        // Go to specific slide
+        function goToSlide(slideIndex) {
+            if (softwareImages.length <= 1) return;
+            
+            currentSlide = slideIndex;
+            showSlide(currentSlide);
+            
+            // Restart the slideshow timer
+            startSlideshow();
+        }
+
+        // Show specific slide
+        function showSlide(slideIndex) {
+            const slides = document.querySelectorAll('.slide');
+            const dots = document.querySelectorAll('.dot');
+            
+            slides.forEach((slide, index) => {
+                slide.classList.toggle('active', index === slideIndex);
+            });
+            
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === slideIndex);
+            });
+        }
+
+        // Format date helper function
+        function formatDate(dateString) {
+            if (!dateString) return 'Recently';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.detail-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Action functions
+        function downloadSoftware() {
+            if (!currentSoftware) {
+                showMessage('error', 'Software not loaded');
+                return;
+            }
+
+            const downloadLink = currentSoftware.download_link;
+            if (downloadLink && downloadLink.trim() !== '' && downloadLink !== '#download' && downloadLink !== 'null') {
+                // Record download
+                fetch(`/api/software/${currentSoftware.software_id || currentSoftware.id}/download`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentSoftware.downloads_count = (currentSoftware.downloads_count || 0) + 1;
+                        document.getElementById('totalDownloads').textContent = currentSoftware.downloads_count.toLocaleString();
+                        
+                        // Update specs display as well
+                        const specsContainer = document.getElementById('specsList');
+                        const downloadRow = specsContainer.querySelector('.spec-row:nth-child(5) .spec-value');
+                        if (downloadRow) {
+                            downloadRow.textContent = currentSoftware.downloads_count.toLocaleString();
+                        }
+                    }
+                })
+                .catch(error => console.error('Error recording download:', error));
+
+                // Open download link
+                window.open(downloadLink, '_blank');
+                showMessage('success', 'Opening download link...');
+            } else {
+                showMessage('error', 'Download link not available for this software');
+            }
+        }
+
+        function tryDemo() {
+            if (!currentSoftware) {
+                showMessage('error', 'Software not loaded');
+                return;
+            }
+
+            const demoLink = currentSoftware.demo_link;
+            if (demoLink && demoLink.trim() !== '' && demoLink !== '#demo' && demoLink !== 'null') {
+                window.open(demoLink, '_blank');
+                showMessage('success', 'Opening demo...');
+            } else {
+                showMessage('error', 'Demo link not available for this software');
+            }
+        }
+
+        function contactDeveloper() {
+            if (!currentSoftware) {
+                showMessage('error', 'Software not loaded');
+                return;
+            }
+
+            // Try to contact via seller information if available
+            const sellerEmail = currentSoftware.seller_email;
+            const sellerPhone = currentSoftware.seller_phone;
+            const softwareName = currentSoftware.name;
+            const developerName = currentSoftware.developer_name || currentSoftware.seller_name;
+            
+            if (sellerPhone && sellerPhone.trim() !== '') {
+                // Create WhatsApp link
+                const whatsappMessage = `Hi ${developerName}, I'm interested in your software: ${softwareName}`;
+                const whatsappUrl = `https://wa.me/${sellerPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(whatsappMessage)}`;
+                window.open(whatsappUrl, '_blank');
+                showMessage('success', 'Opening WhatsApp to contact developer...');
+            } else if (sellerEmail && sellerEmail.trim() !== '') {
+                // Create email link
+                const emailSubject = `Inquiry about: ${softwareName}`;
+                const emailBody = `Hi ${developerName},\n\nI'm interested in your software "${softwareName}" and would like to know more about it.\n\nBest regards`;
+                const mailtoUrl = `mailto:${sellerEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+                window.location.href = mailtoUrl;
+                showMessage('success', 'Opening email to contact developer...');
+            } else {
+                showMessage('error', 'Developer contact information not available');
+            }
+        }
+
+        // Utility functions
+        function showMessage(type, text) {
+            const messageEl = document.getElementById(type + 'Message');
+            const textEl = document.getElementById(type + 'Text');
+            
+            textEl.textContent = text;
+            messageEl.style.display = 'flex';
+            
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 4000);
+        }
+
+        // Listen for messages from parent window (if in iframe)
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'loadSoftware') {
+                // Reload with new software ID
+                window.location.search = `?id=${event.data.softwareId}`;
+            }
+        });
+
+        // Cleanup slideshow when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (slideshowInterval) {
+                clearInterval(slideshowInterval);
+            }
+        });
+    </script>
+</body>
+</html>
