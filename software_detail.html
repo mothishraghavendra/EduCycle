@@ -156,7 +156,7 @@
 
         .preview-image {
             width: 100%;
-            height: 250px;
+            height: 220px;
             background: linear-gradient(45deg, #f8f9fa, #e9ecef);
             border-radius: 10px;
             display: flex;
@@ -170,10 +170,12 @@
         }
 
         .preview-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            max-width: 100%;
+            max-height: 220px;
             border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+            object-fit: contain;
             transition: opacity 0.5s ease-in-out;
         }
 
@@ -618,6 +620,123 @@
             border: 1px solid #f5c6cb;
         }
 
+        /* Categories styles */
+        .categories-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .category-tag {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #1565c0;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid #90caf9;
+        }
+
+        /* Links section styles */
+        .links-section {
+            display: grid;
+            gap: 15px;
+        }
+
+        .link-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+
+        .link-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .link-icon {
+            font-size: 1.5rem;
+            color: #007bff;
+            min-width: 24px;
+        }
+
+        .link-content {
+            flex: 1;
+        }
+
+        .link-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .link-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .link-url {
+            font-size: 0.85rem;
+            color: #007bff;
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .link-url:hover {
+            text-decoration: underline;
+        }
+
+        /* Technical Details styles */
+        .technical-details {
+            display: grid;
+            gap: 20px;
+        }
+
+        .tech-detail-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .tech-detail-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tech-detail-content {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .tech-stack-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .tech-stack-tag {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid #ffeaa7;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 1024px) {
             .hero-content {
@@ -682,13 +801,21 @@
                         <!-- Tech badges will be populated here -->
                     </div>
                     <div class="hero-actions">
-                        <button class="btn-hero-primary" onclick="downloadSoftware()">
+                        <button class="btn-hero-primary" id="downloadBtn" onclick="downloadSoftware()">
                             <i class="bi bi-download"></i>
                             Download Now
                         </button>
-                        <button class="btn-hero-secondary" onclick="tryDemo()">
+                        <button class="btn-hero-secondary" id="demoBtn" onclick="tryDemo()">
                             <i class="bi bi-play-circle"></i>
                             Try Demo
+                        </button>
+                        <button class="btn-hero-secondary" id="githubBtn" onclick="viewGithub()" style="display: none;">
+                            <i class="bi bi-github"></i>
+                            View Source
+                        </button>
+                        <button class="btn-hero-secondary" id="docsBtn" onclick="viewDocumentation()" style="display: none;">
+                            <i class="bi bi-file-text"></i>
+                            Documentation
                         </button>
                     </div>
                 </div>
@@ -718,6 +845,14 @@
                         <i class="bi bi-gear"></i>
                         Requirements
                     </button>
+                    <button class="detail-tab" onclick="switchTab('links')">
+                        <i class="bi bi-link-45deg"></i>
+                        Links & Resources
+                    </button>
+                    <button class="detail-tab" onclick="switchTab('details')">
+                        <i class="bi bi-clipboard-data"></i>
+                        Technical Details
+                    </button>
                 </div>
                 
                 <div class="tab-content">
@@ -725,6 +860,13 @@
                         <h3>About this Software</h3>
                         <div id="softwareDescription">
                             Loading description...
+                        </div>
+                        
+                        <div id="softwareCategories" style="margin-top: 20px;">
+                            <h4>Categories</h4>
+                            <div class="categories-tags" id="categoriesList">
+                                <!-- Categories will be populated here -->
+                            </div>
                         </div>
                     </div>
                     
@@ -739,6 +881,20 @@
                         <h3>System Requirements</h3>
                         <div class="system-requirements" id="systemRequirements">
                             <!-- Requirements will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <div class="tab-panel" id="links">
+                        <h3>Links & Resources</h3>
+                        <div class="links-section" id="linksSection">
+                            <!-- Links will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <div class="tab-panel" id="details">
+                        <h3>Technical Details</h3>
+                        <div class="technical-details" id="technicalDetails">
+                            <!-- Technical details will be populated here -->
                         </div>
                     </div>
                 </div>
@@ -761,7 +917,7 @@
                         <i class="bi bi-download"></i>
                         Download
                     </button>
-                    <button class="demo-btn" onclick="tryDemo()">
+                    <button class="demo-btn" id="sidebarDemoBtn">
                         <i class="bi bi-play-circle"></i>
                         Try Demo
                     </button>
@@ -797,6 +953,9 @@
                         Contact Developer
                     </button>
                 </div>
+
+                <!-- Support & Contact -->
+
             </div>
         </div>
 
@@ -834,27 +993,34 @@
             const softwareId = urlParams.get('id');
             
             if (!softwareId) {
-                showMessage('error', 'Software ID not provided');
+                showMessage('error', 'Software ID not provided in URL. Please use: software_detail.html?id=SOFTWARE_ID');
                 document.getElementById('loadingOverlay').style.display = 'none';
                 return;
             }
             
+            console.log('🔍 Loading software details for ID:', softwareId);
+            
             // Fetch software details from API
             fetch(`/api/software/${softwareId}`)
-                .then(response => response.json())
+                .then(response => {
+                    console.log('📡 API Response status:', response.status);
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('📊 API Response data:', data);
                     if (data.success) {
                         // Handle both 'software' and 'product' response formats
                         const software = data.software || data.product;
                         displaySoftware(software);
                     } else {
                         showMessage('error', data.message || 'Software not found');
+                        console.error('❌ API Error:', data.message);
                     }
                     document.getElementById('loadingOverlay').style.display = 'none';
                 })
                 .catch(error => {
-                    console.error('Error loading software:', error);
-                    showMessage('error', 'Failed to load software details');
+                    console.error('❌ Error loading software:', error);
+                    showMessage('error', 'Failed to load software details. Please check if the server is running and the software ID is correct.');
                     document.getElementById('loadingOverlay').style.display = 'none';
                 });
         }
@@ -862,6 +1028,7 @@
         // Display software information
         function displaySoftware(software) {
             currentSoftware = software;
+            console.log('📊 Displaying software:', software);
             
             // Hero section
             document.getElementById('softwareTitle').textContent = software.name || 'Unknown Software';
@@ -872,6 +1039,15 @@
             badgesContainer.innerHTML = '';
             if (software.tech_stack && software.tech_stack.trim() !== '') {
                 const techArray = software.tech_stack.split(',').map(tech => tech.trim()).filter(tech => tech);
+                techArray.forEach(tech => {
+                    const badge = document.createElement('span');
+                    badge.className = 'tech-badge';
+                    badge.textContent = tech;
+                    badgesContainer.appendChild(badge);
+                });
+            } else if (software.techStack && software.techStack.trim() !== '') {
+                // Try alternative field name
+                const techArray = software.techStack.split(',').map(tech => tech.trim()).filter(tech => tech);
                 techArray.forEach(tech => {
                     const badge = document.createElement('span');
                     badge.className = 'tech-badge';
@@ -893,26 +1069,42 @@
             const previewImage = document.getElementById('previewImage');
             softwareImages = [];
             
+            console.log('🖼️ Image debugging - software object:', {
+                image1_url: software.image1_url,
+                image2_url: software.image2_url, 
+                image3_url: software.image3_url,
+                images: software.images
+            });
+            
             // Check if images array is available (from API response)
             if (software.images && Array.isArray(software.images) && software.images.length > 0) {
                 softwareImages = software.images.filter(img => img && img.trim() !== '');
+                console.log('🖼️ Using images array:', softwareImages);
             } else {
                 // Fallback: Collect individual image URL fields
                 if (software.image1_url && software.image1_url.trim() !== '') {
                     softwareImages.push(software.image1_url);
+                    console.log('🖼️ Added image1_url:', software.image1_url);
                 }
                 if (software.image2_url && software.image2_url.trim() !== '') {
                     softwareImages.push(software.image2_url);
+                    console.log('🖼️ Added image2_url:', software.image2_url);
                 }
                 if (software.image3_url && software.image3_url.trim() !== '') {
                     softwareImages.push(software.image3_url);
+                    console.log('🖼️ Added image3_url:', software.image3_url);
                 }
+                console.log('🖼️ Using individual URL fields:', softwareImages);
             }
+            
+            console.log('🖼️ Final softwareImages array:', softwareImages);
             
             // Setup slideshow or single image
             if (softwareImages.length > 0) {
+                console.log('🖼️ Setting up slideshow with', softwareImages.length, 'images');
                 setupImageSlideshow(softwareImages);
             } else {
+                console.log('🖼️ No images found, showing placeholder');
                 previewImage.innerHTML = '<i class="bi bi-laptop"></i>';
             }
             
@@ -926,6 +1118,41 @@
                 document.getElementById('priceDisplay').style.display = 'block';
                 document.getElementById('freeDisplay').style.display = 'none';
             }
+            // Set sidebar download and demo buttons
+            setSidebarActionButtons(software);
+        // Set sidebar download and demo buttons to load the correct links
+        function setSidebarActionButtons(software) {
+            const sidebarDownloadBtn = document.querySelector('.download-btn');
+            const sidebarDemoBtn = document.getElementById('sidebarDemoBtn');
+            function getField(obj, keys) {
+                for (const k of keys) {
+                    if (obj[k] && typeof obj[k] === 'string' && obj[k].trim() !== '' && obj[k] !== 'null' && obj[k] !== '#') {
+                        return obj[k];
+                    }
+                }
+                return '';
+            }
+            // Download button
+            const downloadLink = getField(software, ['download_link', 'downloadLink']);
+            if (downloadLink) {
+                sidebarDownloadBtn.onclick = () => window.open(downloadLink, '_blank');
+                sidebarDownloadBtn.style.display = 'inline-flex';
+                sidebarDownloadBtn.disabled = false;
+            } else {
+                sidebarDownloadBtn.style.display = 'none';
+                sidebarDownloadBtn.disabled = true;
+            }
+            // Demo button
+            const demoLink = getField(software, ['demo_link', 'demoLink', 'video_link', 'videoLink']);
+            if (demoLink) {
+                sidebarDemoBtn.onclick = () => window.open(demoLink, '_blank');
+                sidebarDemoBtn.style.display = 'inline-flex';
+                sidebarDemoBtn.disabled = false;
+            } else {
+                sidebarDemoBtn.style.display = 'none';
+                sidebarDemoBtn.disabled = true;
+            }
+        }
             
             // Description
             document.getElementById('softwareDescription').innerHTML = `
@@ -937,48 +1164,42 @@
             const featuresContainer = document.getElementById('featuresList');
             featuresContainer.innerHTML = '';
             let features = [];
-            
-            if (software.features && software.features.trim() !== '') {
+            if (software.features && typeof software.features === 'string' && software.features.trim() !== '') {
                 try {
-                    // Try to parse as JSON first
                     features = JSON.parse(software.features);
                 } catch (e) {
-                    // If not JSON, try comma-separated values
                     features = software.features.split(',').map(f => f.trim()).filter(f => f);
                 }
+            } else if (Array.isArray(software.features)) {
+                features = software.features;
             }
-            
-            // If no features provided, use defaults
-            if (features.length === 0) {
+            if (!features || features.length === 0) {
                 features = [
-                    'Cross-platform compatibility', 
-                    'User-friendly interface', 
-                    'Regular updates available', 
+                    'Cross-platform compatibility',
+                    'User-friendly interface',
+                    'Regular updates available',
                     'Technical support included',
                     'Documentation provided'
                 ];
             }
-            
             features.forEach(feature => {
                 const li = document.createElement('li');
                 li.textContent = feature;
                 featuresContainer.appendChild(li);
             });
-            
-            // System Requirements
+
+            // System Requirements (robust loading)
             const reqContainer = document.getElementById('systemRequirements');
             let requirements = {};
-            
-            if (software.system_requirements && software.system_requirements.trim() !== '') {
+            if (software.system_requirements && typeof software.system_requirements === 'string' && software.system_requirements.trim() !== '') {
                 try {
-                    // Try to parse as JSON first
                     requirements = JSON.parse(software.system_requirements);
                 } catch (e) {
-                    // If not JSON, treat as general requirement
                     requirements = { general: software.system_requirements };
                 }
+            } else if (typeof software.system_requirements === 'object' && software.system_requirements !== null) {
+                requirements = software.system_requirements;
             } else {
-                // Default requirements
                 requirements = {
                     os: software.platform || 'Windows 10+, macOS 10.14+, Ubuntu 18.04+',
                     ram: '4GB minimum, 8GB recommended',
@@ -986,7 +1207,6 @@
                     processor: 'Intel i3 or AMD equivalent'
                 };
             }
-            
             reqContainer.innerHTML = Object.entries(requirements).map(([key, value]) => `
                 <div class="req-item">
                     <span class="req-label">${key.toUpperCase().replace('_', ' ')}:</span>
@@ -996,11 +1216,16 @@
             
             // Specifications
             const specsContainer = document.getElementById('specsList');
+            // Prefer seller name (user name) as developer name, fallback to developer_name, never show 'Unknown Developer'
+            let specsDeveloperName = software.seller_name || (software.seller && (software.seller.name || software.seller.seller_name)) || software.developer_name;
+            if (!specsDeveloperName || specsDeveloperName.trim() === '') {
+                specsDeveloperName = 'User';
+            }
             const specs = [
                 { label: 'Version', value: software.version || '1.0.0' },
                 { label: 'License', value: software.license_type || 'Standard License' },
                 { label: 'Platform', value: software.platform || 'Cross-platform' },
-                { label: 'Developer', value: software.developer_name || 'Unknown Developer' },
+                { label: 'Developer', value: specsDeveloperName },
                 { label: 'Downloads', value: (software.downloads_count || 0).toLocaleString() },
                 { label: 'Views', value: (software.views_count || 0).toLocaleString() },
                 { label: 'Released', value: formatDate(software.created_at) }
@@ -1014,11 +1239,253 @@
             `).join('');
             
             // Developer info
-            const developerName = software.developer_name || software.seller_name || 'Unknown Developer';
+            // Prefer seller name (user name) as developer name, fallback to developer_name, never show 'Unknown Developer'
+            let developerName = software.seller_name || (software.seller && (software.seller.name || software.seller.seller_name)) || software.developer_name;
+            if (!developerName || developerName.trim() === '') {
+                developerName = 'User';
+            }
             document.getElementById('developerName').textContent = developerName;
             document.getElementById('developerAvatar').textContent = developerName.charAt(0).toUpperCase();
             document.getElementById('totalDownloads').textContent = (software.downloads_count || 0).toLocaleString();
+
+            // Update action buttons with links
+            updateActionButtons(software);
+            
+            // Display categories
+            displayCategories(software);
+            
+            // Display links and resources
+            displayLinksAndResources(software);
+            
+            // Display technical details
+            displayTechnicalDetails(software);
         }
+
+        // Update action buttons with actual links
+        function updateActionButtons(software) {
+            const downloadBtn = document.getElementById('downloadBtn');
+            const demoBtn = document.getElementById('demoBtn');
+            const githubBtn = document.getElementById('githubBtn');
+            const docsBtn = document.getElementById('docsBtn');
+
+            // Helper to get the first non-empty value from possible field names
+            function getField(obj, keys) {
+                for (const k of keys) {
+                    if (obj[k] && typeof obj[k] === 'string' && obj[k].trim() !== '' && obj[k] !== 'null' && obj[k] !== '#') {
+                        return obj[k];
+                    }
+                }
+                return '';
+            }
+
+            // Download button (user-provided link)
+            const downloadLink = getField(software, ['download_link', 'downloadLink']);
+            if (downloadLink) {
+                downloadBtn.onclick = () => window.open(downloadLink, '_blank');
+                downloadBtn.style.display = 'inline-flex';
+                downloadBtn.disabled = false;
+            } else {
+                downloadBtn.style.display = 'none';
+                downloadBtn.disabled = true;
+            }
+
+            // Demo button (user-provided video/demo link)
+            const demoLink = getField(software, ['demo_link', 'demoLink', 'video_link', 'videoLink']);
+            if (demoLink) {
+                demoBtn.onclick = () => window.open(demoLink, '_blank');
+                demoBtn.style.display = 'inline-flex';
+                demoBtn.disabled = false;
+            } else {
+                demoBtn.style.display = 'none';
+                demoBtn.disabled = true;
+            }
+
+            // GitHub button
+            const githubLink = getField(software, ['github_link', 'githubLink']);
+            if (githubLink) {
+                githubBtn.onclick = () => window.open(githubLink, '_blank');
+                githubBtn.style.display = 'inline-flex';
+            } else {
+                githubBtn.style.display = 'none';
+            }
+
+            // Documentation button
+            const docsLink = getField(software, ['documentation_link', 'documentationLink']);
+            if (docsLink) {
+                docsBtn.onclick = () => window.open(docsLink, '_blank');
+                docsBtn.style.display = 'inline-flex';
+            } else {
+                docsBtn.style.display = 'none';
+            }
+        }
+
+        // Display software categories
+        function displayCategories(software) {
+            const categoriesContainer = document.getElementById('categoriesList');
+            categoriesContainer.innerHTML = '';
+
+            // Handle categories from different possible sources
+            let categories = [];
+            if (software.categories && Array.isArray(software.categories)) {
+                categories = software.categories;
+            } else if (software.category && software.category.trim() !== '') {
+                categories = [{ name: software.category }];
+            }
+
+            if (categories.length > 0) {
+                categories.forEach(category => {
+                    const categoryTag = document.createElement('span');
+                    categoryTag.className = 'category-tag';
+                    categoryTag.innerHTML = `${category.icon ? `<i class="${category.icon}"></i> ` : ''}${category.name}`;
+                    categoriesContainer.appendChild(categoryTag);
+                });
+            } else {
+                categoriesContainer.innerHTML = '<span class="category-tag">General Software</span>';
+            }
+        }
+
+        // Display links and resources
+        function displayLinksAndResources(software) {
+            const linksContainer = document.getElementById('linksSection');
+            linksContainer.innerHTML = '';
+
+            // Helper to get the first non-empty value from possible field names
+            function getField(obj, keys) {
+                for (const k of keys) {
+                    if (obj[k] && typeof obj[k] === 'string' && obj[k].trim() !== '' && obj[k] !== 'null' && obj[k] !== '#') {
+                        return obj[k];
+                    }
+                }
+                return '';
+            }
+
+            const links = [
+                {
+                    title: 'Download',
+                    description: 'Direct download link for the software',
+                    url: getField(software, ['download_link', 'downloadLink']),
+                    icon: 'bi-download'
+                },
+                {
+                    title: 'Live Demo',
+                    description: 'Try the software online or watch a demonstration',
+                    url: getField(software, ['demo_link', 'demoLink']),
+                    icon: 'bi-play-circle'
+                },
+                {
+                    title: 'Source Code',
+                    description: 'View the source code on GitHub',
+                    url: getField(software, ['github_link', 'githubLink']),
+                    icon: 'bi-github'
+                },
+                {
+                    title: 'Documentation',
+                    description: 'User guide and technical documentation',
+                    url: getField(software, ['documentation_link', 'documentationLink']),
+                    icon: 'bi-file-text'
+                }
+            ];
+
+            const validLinks = links.filter(link => link.url && link.url.trim() !== '');
+
+            if (validLinks.length > 0) {
+                validLinks.forEach(link => {
+                    const linkElement = document.createElement('div');
+                    linkElement.className = 'link-item';
+                    linkElement.innerHTML = `
+                        <i class="bi ${link.icon} link-icon"></i>
+                        <div class="link-content">
+                            <div class="link-title">${link.title}</div>
+                            <div class="link-description">${link.description}</div>
+                            <a href="${link.url}" target="_blank" class="link-url">${link.url}</a>
+                        </div>
+                    `;
+                    linksContainer.appendChild(linkElement);
+                });
+            } else {
+                linksContainer.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No additional links or resources provided.</p>';
+            }
+        }
+
+        // Display technical details
+        function displayTechnicalDetails(software) {
+            const detailsContainer = document.getElementById('technicalDetails');
+            detailsContainer.innerHTML = '';
+
+            // Platform details
+            if (software.platform) {
+                const platformSection = document.createElement('div');
+                platformSection.className = 'tech-detail-section';
+                platformSection.innerHTML = `
+                    <div class="tech-detail-title">
+                        <i class="bi bi-laptop"></i>
+                        Platform Compatibility
+                    </div>
+                    <div class="tech-detail-content">${software.platform}</div>
+                `;
+                detailsContainer.appendChild(platformSection);
+            }
+
+            // Version and License (robust)
+            const versionLicenseSection = document.createElement('div');
+            versionLicenseSection.className = 'tech-detail-section';
+            const license = software.license_type || software.licenseType || 'Standard License';
+            versionLicenseSection.innerHTML = `
+                <div class="tech-detail-title">
+                    <i class="bi bi-info-circle"></i>
+                    Version & License
+                </div>
+                <div class="tech-detail-content">
+                    <strong>Version:</strong> ${software.version || '1.0.0'}<br>
+                    <strong>License:</strong> ${license}
+                </div>
+            `;
+            detailsContainer.appendChild(versionLicenseSection);
+
+            // Technology Stack (robust)
+            let techStack = software.tech_stack || software.techStack;
+            if (techStack) {
+                const techSection = document.createElement('div');
+                techSection.className = 'tech-detail-section';
+                const techArray = techStack.split(',').map(tech => tech.trim()).filter(tech => tech);
+                const techTags = techArray.map(tech => `<span class="tech-stack-tag">${tech}</span>`).join('');
+                techSection.innerHTML = `
+                    <div class="tech-detail-title">
+                        <i class="bi bi-code-slash"></i>
+                        Technology Stack
+                    </div>
+                    <div class="tech-detail-content">
+                        <div class="tech-stack-tags">${techTags}</div>
+                    </div>
+                `;
+                detailsContainer.appendChild(techSection);
+            }
+
+            // Developer Information (robust)
+            const developerSection = document.createElement('div');
+            developerSection.className = 'tech-detail-section';
+            // Prefer seller name (user name) as developer name, fallback to developer_name, never show 'Unknown Developer'
+            let devName = software.seller_name || (software.seller && (software.seller.name || software.seller.seller_name)) || software.developer_name;
+            if (!devName || devName.trim() === '') {
+                devName = 'User';
+            }
+            const devListedBy = (software.seller && (software.seller.name || software.seller.seller_name)) || software.seller_name || devName || 'User';
+            developerSection.innerHTML = `
+                <div class="tech-detail-title">
+                    <i class="bi bi-person-badge"></i>
+                    Developer Information
+                </div>
+                <div class="tech-detail-content">
+                    <strong>Developer:</strong> ${devName}<br>
+                    <strong>Listed by:</strong> ${devListedBy}<br>
+                    <strong>Release Date:</strong> ${formatDate(software.created_at)}
+                </div>
+            `;
+            detailsContainer.appendChild(developerSection);
+        }
+
+        // Display support contact information
+
 
         // Setup image slideshow
         function setupImageSlideshow(images) {
@@ -1026,7 +1493,7 @@
             
             if (images.length === 1) {
                 // Single image - no slideshow needed
-                previewImage.innerHTML = `<img src="${images[0]}" alt="Software Preview" onerror="this.parentElement.innerHTML='<i class=\\"bi bi-laptop\\"></i>'">`;
+                previewImage.innerHTML = `<img src="${images[0]}" >`;
                 return;
             }
             
@@ -1132,8 +1599,9 @@
 
             const downloadLink = currentSoftware.download_link;
             if (downloadLink && downloadLink.trim() !== '' && downloadLink !== '#download' && downloadLink !== 'null') {
-                // Record download
-                fetch(`/api/software/${currentSoftware.software_id || currentSoftware.id}/download`, {
+                // Record download using the correct ID field
+                const softwareId = currentSoftware.software_id || currentSoftware.id;
+                fetch(`/api/software/${softwareId}/download`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 })
@@ -1182,27 +1650,53 @@
                 return;
             }
 
-            // Try to contact via seller information if available
-            const sellerEmail = currentSoftware.seller_email;
-            const sellerPhone = currentSoftware.seller_phone;
-            const softwareName = currentSoftware.name;
-            const developerName = currentSoftware.developer_name || currentSoftware.seller_name;
-            
-            if (sellerPhone && sellerPhone.trim() !== '') {
-                // Create WhatsApp link
-                const whatsappMessage = `Hi ${developerName}, I'm interested in your software: ${softwareName}`;
-                const whatsappUrl = `https://wa.me/${sellerPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(whatsappMessage)}`;
-                window.open(whatsappUrl, '_blank');
-                showMessage('success', 'Opening WhatsApp to contact developer...');
-            } else if (sellerEmail && sellerEmail.trim() !== '') {
-                // Create email link
-                const emailSubject = `Inquiry about: ${softwareName}`;
-                const emailBody = `Hi ${developerName},\n\nI'm interested in your software "${softwareName}" and would like to know more about it.\n\nBest regards`;
-                const mailtoUrl = `mailto:${sellerEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-                window.location.href = mailtoUrl;
-                showMessage('success', 'Opening email to contact developer...');
+            // Prefer seller email, fallback to developer email if available
+            let email = '';
+            if (currentSoftware.seller_email && currentSoftware.seller_email.trim() !== '') {
+                email = currentSoftware.seller_email;
+            } else if (currentSoftware.developer_email && currentSoftware.developer_email.trim() !== '') {
+                email = currentSoftware.developer_email;
+            } else if (currentSoftware.seller && currentSoftware.seller.email && currentSoftware.seller.email.trim() !== '') {
+                email = currentSoftware.seller.email;
+            }
+            if (email) {
+                const softwareName = currentSoftware.name || '';
+                const developerName = currentSoftware.seller_name || (currentSoftware.seller && (currentSoftware.seller.name || currentSoftware.seller.seller_name)) || currentSoftware.developer_name || 'User';
+                const subject = `Inquiry about ${softwareName}`;
+                const body = `Hello ${developerName},\n\nI'm interested in your software \"${softwareName}\" and would like to know more about it.\n\nThank you!`;
+                window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             } else {
-                showMessage('error', 'Developer contact information not available');
+                showMessage('error', 'Developer email not available for this software');
+            }
+        }
+
+        function viewGithub() {
+            if (!currentSoftware) {
+                showMessage('error', 'Software not loaded');
+                return;
+            }
+
+            const githubLink = currentSoftware.github_link;
+            if (githubLink && githubLink.trim() !== '' && githubLink !== '#github' && githubLink !== 'null') {
+                window.open(githubLink, '_blank');
+                showMessage('success', 'Opening GitHub repository...');
+            } else {
+                showMessage('error', 'GitHub repository not available for this software');
+            }
+        }
+
+        function viewDocumentation() {
+            if (!currentSoftware) {
+                showMessage('error', 'Software not loaded');
+                return;
+            }
+
+            const docsLink = currentSoftware.documentation_link;
+            if (docsLink && docsLink.trim() !== '' && docsLink !== '#docs' && docsLink !== 'null') {
+                window.open(docsLink, '_blank');
+                showMessage('success', 'Opening documentation...');
+            } else {
+                showMessage('error', 'Documentation not available for this software');
             }
         }
 

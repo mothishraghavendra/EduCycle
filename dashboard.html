@@ -98,6 +98,7 @@
             display: flex;
             max-width: 600px;
             margin: 0 20px;
+            position: relative;
         }
 
         .search-dropdown {
@@ -129,6 +130,122 @@
 
         .search-btn:hover {
             background-color: #e68900;
+        }
+
+        /* Search Results Dropdown */
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            margin-top: 2px;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .search-result-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 4px;
+            margin-right: 12px;
+            object-fit: cover;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .search-result-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .search-result-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-result-details {
+            font-size: 0.85rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-result-price {
+            color: #B12704;
+            font-weight: 600;
+        }
+
+        .search-result-category {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+        }
+
+        .software-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .no-results {
+            padding: 20px 15px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        .search-loading {
+            padding: 15px;
+            text-align: center;
+            color: #666;
+        }
+
+        .search-loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .account-section {
@@ -488,7 +605,7 @@
                 flex-shrink: 0;
                 gap: 10px;
                 order: 2; /* Keep cart/logout buttons on the right */
-                margin-top: ;
+                margin-top: 0;
                 margin-left: auto;
             }
             
@@ -532,6 +649,34 @@
                 margin: 8px 0 0 0;
                 max-width: none;
                 box-sizing: border-box;
+                position: relative;
+            }
+            
+            .search-results {
+                left: 0;
+                right: 0;
+                max-height: 300px;
+            }
+            
+            .search-result-item {
+                padding: 8px 12px;
+            }
+            
+            .search-result-image {
+                width: 40px;
+                height: 40px;
+                margin-right: 8px;
+                font-size: 1rem;
+            }
+            
+            .search-result-name {
+                font-size: 0.9rem;
+                margin-bottom: 2px;
+            }
+            
+            .search-result-details {
+                font-size: 0.8rem;
+                gap: 6px;
             }
             
             .search-dropdown {
@@ -743,6 +888,36 @@
                 font-size: 0.9rem;
             }
             
+            .search-results {
+                max-height: 250px;
+            }
+            
+            .search-result-item {
+                padding: 6px 10px;
+            }
+            
+            .search-result-image {
+                width: 35px;
+                height: 35px;
+                margin-right: 6px;
+                font-size: 0.9rem;
+            }
+            
+            .search-result-name {
+                font-size: 0.85rem;
+            }
+            
+            .search-result-details {
+                font-size: 0.75rem;
+                gap: 4px;
+            }
+            
+            .search-result-category,
+            .software-badge {
+                padding: 1px 4px;
+                font-size: 0.7rem;
+            }
+            
             .location-section {
                 padding: 6px 8px;
             }
@@ -897,17 +1072,18 @@
 
             <!-- Search Section -->
             <div class="search-section">
-                <select class="search-dropdown">
-                    <option>All Categories</option>
-                    <option>Textbooks</option>
-                    <option>Calculators</option>
-                    <option>Lab Equipment</option>
-                    <option>Electronics</option>
+                <select class="search-dropdown" id="searchCategory">
+                    <option value="all">All Categories</option>
                 </select>
-                <input type="text" class="search-input" placeholder="Search for textbooks, calculators, and more...">
-                <button class="search-btn">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search for textbooks, calculators, software, and more...">
+                <button class="search-btn" id="searchBtn">
                     <i class="bi bi-search"></i>
                 </button>
+                
+                <!-- Search Results Dropdown -->
+                <div class="search-results" id="searchResults" style="display: none;">
+                    <!-- Search results will be populated here -->
+                </div>
             </div>
 
             <!-- Account Section -->
@@ -1167,6 +1343,208 @@
 
         // Initialize touch navigation
         enableTouchNavigation();
+
+        // Search functionality
+        let searchTimeout;
+        const searchInput = document.getElementById('searchInput');
+        const searchCategory = document.getElementById('searchCategory');
+        const searchResults = document.getElementById('searchResults');
+        const searchBtn = document.getElementById('searchBtn');
+
+        // Initialize search functionality
+        function initializeSearch() {
+            // Search on input with debounce
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+                
+                if (query.length >= 2) {
+                    searchTimeout = setTimeout(() => {
+                        performSearch(query);
+                    }, 300);
+                } else {
+                    hideSearchResults();
+                }
+            });
+
+            // Search on category change
+            searchCategory.addEventListener('change', function() {
+                const query = searchInput.value.trim();
+                if (query.length >= 2) {
+                    performSearch(query);
+                }
+            });
+
+            // Search on button click
+            searchBtn.addEventListener('click', function() {
+                const query = searchInput.value.trim();
+                if (query.length >= 1) {
+                    performSearch(query);
+                }
+            });
+
+            // Hide results when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.search-section')) {
+                    hideSearchResults();
+                }
+            });
+
+            // Handle Enter key
+            searchInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const query = this.value.trim();
+                    if (query.length >= 1) {
+                        performSearch(query);
+                    }
+                }
+            });
+        }
+
+        // Perform search API call
+        async function performSearch(query) {
+            // Map dropdown value to DB value
+            const categoryMap = {
+                'textbooks': 'Text Book',
+                'lab-equipment': 'Lab Equipment',
+                'hardware': 'Hardware',
+                'calculators': 'Calculator',
+                'electronics': 'Electronics',
+                'drafting-items': 'Drafting Items',
+                'study-materials': 'Study Materials',
+                'software': 'software'
+            };
+            const selectedCategory = searchCategory.value;
+            const dbCategory = categoryMap[selectedCategory] || selectedCategory;
+
+            try {
+                showSearchLoading();
+
+                const params = new URLSearchParams();
+                if (dbCategory && dbCategory !== 'all') {
+                    params.append('category', dbCategory);
+                }
+                if (query) {
+                    params.append('search', query);
+                }
+
+                const response = await fetch(`/api/search?${params.toString()}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displaySearchResults(data.products || []);
+                } else {
+                    displaySearchResults([]);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                displaySearchResults([]);
+            }
+        }
+
+        // Show loading state
+        function showSearchLoading() {
+            searchResults.innerHTML = `
+                <div class="search-loading">
+                    <i class="bi bi-arrow-clockwise"></i> Searching...
+                </div>
+            `;
+            searchResults.style.display = 'block';
+        }
+
+        // Display search results
+        function displaySearchResults(products) {
+            if (products.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="no-results">
+                        <i class="bi bi-search"></i> No products found matching your search.
+                    </div>
+                `;
+            } else {
+                const resultsHTML = products.slice(0, 10).map(product => createSearchResultItem(product)).join('');
+                searchResults.innerHTML = resultsHTML;
+            }
+            
+            searchResults.style.display = 'block';
+        }
+
+        // Create individual search result item
+        function createSearchResultItem(product) {
+            const isSoftware = product.product_type === 'software';
+            const productId = isSoftware ? product.software_id : product.product_id;
+            const imageUrl = product.image1_url || product.image1;
+            const price = parseFloat(product.price || 0);
+            
+            // Format price
+            const priceDisplay = price === 0 ? 'FREE' : `₹${price.toFixed(2)}`;
+            
+            // Create image element
+            let imageElement;
+            if (imageUrl && imageUrl.trim() !== '') {
+                imageElement = `<img src="${imageUrl}" alt="${product.name}" class="search-result-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                               <div class="search-result-image" style="display: none;"><i class="bi bi-${isSoftware ? 'laptop' : 'box'}"></i></div>`;
+            } else {
+                imageElement = `<div class="search-result-image"><i class="bi bi-${isSoftware ? 'laptop' : 'box'}"></i></div>`;
+            }
+
+            return `
+                <div class="search-result-item" onclick="openProductDetail('${productId}', '${isSoftware ? 'software' : 'regular'}')">
+                    ${imageElement}
+                    <div class="search-result-content">
+                        <div class="search-result-name">${escapeHtml(product.name)}</div>
+                        <div class="search-result-details">
+                            <span class="search-result-price">${priceDisplay}</span>
+                            ${isSoftware ? 
+                                `<span class="software-badge"><i class="bi bi-code-slash"></i> Software</span>` :
+                                `<span class="search-result-category">${product.category || 'General'}</span>`
+                            }
+                            ${product.condition_item ? `<span style="color: #28a745;">• ${product.condition_item}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Open product detail page
+        function openProductDetail(productId, productType) {
+            hideSearchResults();
+            let detailUrl;
+            if (productType === 'software') {
+                detailUrl = `software_detail.html?id=${productId}`;
+            } else {
+                detailUrl = `regular_product_detail.html?id=${productId}`;
+            }
+            // Navigate iframe to product detail page if present, else redirect
+            const iframe = document.getElementById('mainFrame');
+            if (iframe) {
+                iframe.src = detailUrl;
+                console.log('🔄 Opening product detail:', detailUrl);
+            } else {
+                window.location.href = detailUrl;
+            }
+            // Clear search input
+            searchInput.value = '';
+        }
+
+        // Hide search results
+        function hideSearchResults() {
+            searchResults.style.display = 'none';
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize search when page loads
+        window.addEventListener('load', function() {
+            fetchUserData();
+            adjustIframeHeight();
+            initializeSearch();
+        });
     </script>
 </body>
 </html>

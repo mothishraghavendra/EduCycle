@@ -528,46 +528,17 @@
             try {
                 console.log('🔄 Loading products...');
                 
-                // Load regular products
-                const regularResponse = await fetch('/api/products');
-                const regularData = await regularResponse.json();
+                // Load all products from unified endpoint
+                const response = await fetch('/api/all-products');
+                const data = await response.json();
                 
-                let regularProducts = [];
-                if (regularData.success) {
-                    regularProducts = regularData.products.map(product => ({
-                        ...product,
-                        product_type: 'regular'
-                    }));
+                if (data.success) {
+                    allProducts = data.products;
+                    console.log(`✅ Loaded ${data.breakdown.regular} regular products and ${data.breakdown.software} software products`);
+                } else {
+                    allProducts = [];
+                    console.error('❌ Failed to load products:', data.message);
                 }
-
-                // Load software products
-                let softwareProducts = [];
-                try {
-                    const softwareResponse = await fetch('/api/software');
-                    const softwareData = await softwareResponse.json();
-                    
-                    if (softwareData.success) {
-                        softwareProducts = softwareData.software.map(software => ({
-                            product_id: software.software_id,
-                            name: software.name,
-                            description: software.description,
-                            price: software.price,
-                            category: 'software',
-                            condition_item: 'New',
-                            image1: software.image1_url,
-                            seller_name: software.seller_name,
-                            seller_phone: null, // Software products don't have phone contact
-                            created_at: software.created_at,
-                            product_type: 'software'
-                        }));
-                    }
-                } catch (error) {
-                    console.log('⚠️ Software products not available:', error.message);
-                }
-
-                // Combine all products
-                allProducts = [...regularProducts, ...softwareProducts];
-                console.log(`✅ Loaded ${regularProducts.length} regular products and ${softwareProducts.length} software products`);
                 
                 renderProducts();
                 updateCategoryButtons();

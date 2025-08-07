@@ -1040,26 +1040,48 @@
         // Handle successful Cloudinary upload
         function handleCloudinaryUpload(info) {
             const imageNumber = cloudinaryWidget.currentImageNumber;
-            if (!imageNumber) return;
+            if (!imageNumber) {
+                console.warn('No image number specified for upload');
+                return;
+            }
+
+            console.log(`📷 Handling Cloudinary upload for image ${imageNumber}:`, info.secure_url);
 
             // Store the uploaded image URL
             uploadedImages[`image${imageNumber}`] = info.secure_url;
 
-            // Update the preview
-            const uploadBox = document.querySelector(`#image${imageNumber}`).parentElement;
-            const photoText = imageNumber === 1 ? 'Main Photo' : `Photo ${imageNumber}`;
+            // Find the elements using the existing structure
+            const inputElement = document.getElementById(`image${imageNumber}`);
+            const uploadBox = inputElement ? inputElement.closest('.image-upload-box') : null;
+            const previewImg = document.getElementById(`preview${imageNumber}`);
+            const uploadText = document.getElementById(`uploadText${imageNumber}`);
             
-            uploadBox.innerHTML = `
-                <img src="${info.secure_url}" alt="Preview" class="image-preview">
-                <div class="upload-text">${photoText}</div>
-                <div class="upload-subtext">Click to change • Uploaded to cloud</div>
-                <button type="button" class="remove-image" onclick="removeCloudinaryImage(${imageNumber}, event)">×</button>
-                <input type="file" id="image${imageNumber}" name="image${imageNumber}" class="file-input" accept="image/*" style="display: none;">
-            `;
-            uploadBox.classList.add('has-image');
-            uploadBox.setAttribute('onclick', `triggerCloudinaryUpload(${imageNumber})`);
-
-            console.log(`📷 Image ${imageNumber} preview updated with Cloudinary URL`);
+            if (uploadBox && previewImg && uploadText) {
+                // Set the preview image
+                previewImg.src = info.secure_url;
+                previewImg.style.display = 'block';
+                
+                // Update the upload box to show it has an image
+                uploadBox.classList.add('has-image');
+                
+                // Update the text to indicate it's a new image
+                uploadText.textContent = `New ${imageNumber === 1 ? 'Main Photo' : `Photo ${imageNumber}`}`;
+                uploadText.style.color = '#28a745'; // Green color for new uploads
+                
+                // Update the onclick to use triggerImageUpload for replacement
+                uploadBox.setAttribute('onclick', `triggerImageUpload(${imageNumber})`);
+                
+                // Show the remove button
+                const removeBtn = uploadBox.querySelector('.remove-image');
+                if (removeBtn) {
+                    removeBtn.style.display = 'block';
+                    removeBtn.setAttribute('onclick', `removeUploadedImage(${imageNumber})`);
+                }
+                
+                console.log(`✅ Image ${imageNumber} preview updated with new Cloudinary URL`);
+            } else {
+                console.warn(`⚠️ Could not find upload elements for image ${imageNumber}`);
+            }
         }
         async function loadSoftwareCategories() {
             try {
@@ -1127,6 +1149,363 @@
             }
         }
 
+        // Global variables for edit mode
+        let isEditMode = false;
+        let editProductId = null;
+        let editProductType = null;
+
+        // Check if we're in edit mode based on URL parameters
+        function checkEditMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const editType = urlParams.get('edit');
+            const productId = urlParams.get('id');
+
+            if (editType && productId) {
+                isEditMode = true;
+                editProductId = productId;
+                editProductType = editType;
+                
+                console.log(`🔧 Edit mode detected: ${editType} product ID ${productId}`);
+                
+                // Update page title and heading
+                document.title = 'Edit Item - Educycle';
+                const pageHeading = document.querySelector('h1');
+                if (pageHeading) {
+                    pageHeading.textContent = 'Edit Your Item';
+                }
+                
+                // Update submit button text
+                const submitBtn = document.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Update Item';
+                }
+                
+                // Load the product data
+                if (editProductType === 'software') {
+                    loadSoftwareForEdit();
+                } else {
+                    loadProductForEdit();
+                }
+            }
+        }
+
+        // Load regular product data for editing
+        async function loadProductForEdit() {
+            try {
+                console.log(`🔄 Loading product data for editing (ID: ${editProductId})`);
+                
+                const response = await fetch(`/api/products/${editProductId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const product = data.product;
+                    console.log('✅ Product data loaded:', product);
+                    
+                    // Fill form fields
+                    document.getElementById('itemName').value = product.name || '';
+                    document.getElementById('description').value = product.description || '';
+                    document.getElementById('price').value = product.price || '';
+                    document.getElementById('category').value = product.category || '';
+                    document.getElementById('condition').value = product.condition_item || '';
+                    
+                    // Trigger change events to ensure proper validation
+                    document.getElementById('category').dispatchEvent(new Event('change'));
+                    
+                    // Set donation/discounted based on price
+                    if (product.price == 0) {
+                        selectSaleType('donation');
+                    } else {
+                        selectSaleType('discounted');
+                    }
+                    
+                    // Initialize uploadedImages with existing images for proper form submission
+                    if (product.image1_url) uploadedImages.image1 = product.image1_url;
+                    if (product.image2_url) uploadedImages.image2 = product.image2_url;
+                    if (product.image3_url) uploadedImages.image3 = product.image3_url;
+                    
+                    // Show existing images with proper preview
+                    initializeEditImagePreviews(product);
+                    
+                    console.log('✅ Regular product form populated successfully');
+                    console.log('📷 UploadedImages initialized:', uploadedImages);
+                    
+                } else {
+                    console.error('❌ Failed to load product:', data.message);
+                    alert('Failed to load product data: ' + data.message);
+                }
+            } catch (error) {
+                console.error('❌ Error loading product:', error);
+                alert('Failed to load product data. Please try again.');
+            }
+        }
+
+        // Load software product data for editing
+        async function loadSoftwareForEdit() {
+            try {
+                console.log(`🔄 Loading software data for editing (ID: ${editProductId})`);
+                
+                const response = await fetch(`/api/software/${editProductId}/edit`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const software = data.software;
+                    console.log('✅ Software data loaded:', software);
+                    
+                    // Set category to software first
+                    document.getElementById('category').value = 'software';
+                    handleCategoryChange(); // This will show software fields
+                    
+                    // Wait a bit for fields to be visible, then fill them
+                    setTimeout(() => {
+                        // Fill basic fields
+                        document.getElementById('itemName').value = software.name || '';
+                        document.getElementById('softwareDescription').value = software.description || '';
+                        document.getElementById('price').value = software.price || '';
+                        
+                        // Fill software-specific fields
+                        document.getElementById('tagline').value = software.tagline || '';
+                        document.getElementById('platform').value = software.platform || '';
+                        document.getElementById('techStack').value = software.tech_stack || '';
+                        document.getElementById('developerName').value = software.developer_name || '';
+                        document.getElementById('licenseType').value = software.license_type || '';
+                        document.getElementById('version').value = software.version || '';
+                        document.getElementById('downloadLink').value = software.download_link || '';
+                        document.getElementById('demoLink').value = software.demo_link || '';
+                        document.getElementById('githubLink').value = software.github_link || '';
+                        document.getElementById('documentationLink').value = software.documentation_link || '';
+                        
+                        // Handle features (JSON array)
+                        if (software.features) {
+                            try {
+                                const features = JSON.parse(software.features);
+                                if (Array.isArray(features)) {
+                                    features.forEach((feature, index) => {
+                                        const featureInput = document.getElementById(`feature${index + 1}`);
+                                        if (featureInput) {
+                                            featureInput.value = feature;
+                                        }
+                                    });
+                                }
+                            } catch (e) {
+                                console.warn('Could not parse features:', e);
+                            }
+                        }
+                        
+                        // Handle system requirements (JSON object)
+                        if (software.system_requirements) {
+                            try {
+                                const sysReq = JSON.parse(software.system_requirements);
+                                document.getElementById('minOs').value = sysReq.minOs || '';
+                                document.getElementById('minRam').value = sysReq.minRam || '';
+                                document.getElementById('minStorage').value = sysReq.minStorage || '';
+                                document.getElementById('minProcessor').value = sysReq.minProcessor || '';
+                            } catch (e) {
+                                console.warn('Could not parse system requirements:', e);
+                            }
+                        }
+                        
+                        // Set donation/discounted based on price
+                        if (software.price == 0) {
+                            selectSaleType('donation');
+                        } else {
+                            selectSaleType('discounted');
+                        }
+                        
+                        // Initialize uploadedImages with existing images for proper form submission
+                        if (software.image1_url) uploadedImages.image1 = software.image1_url;
+                        if (software.image2_url) uploadedImages.image2 = software.image2_url;
+                        if (software.image3_url) uploadedImages.image3 = software.image3_url;
+                        
+                        // Show existing images with proper preview
+                        initializeEditImagePreviews(software);
+                        
+                        console.log('✅ Software form populated successfully');
+                        console.log('📷 UploadedImages initialized:', uploadedImages);
+                        
+                        // Set software category if available
+                        // The API returns categories as an array of objects with name and icon
+                        if (software.categories && software.categories.length > 0) {
+                            const categoryName = software.categories[0].name; // Get the name from the first category
+                            console.log('Setting software category:', categoryName);
+                            
+                            // Find and select the category
+                            setTimeout(() => {
+                                const categoryOptions = document.querySelectorAll('.category-option');
+                                let categoryFound = false;
+                                categoryOptions.forEach(option => {
+                                    const optionText = option.textContent.trim();
+                                    if (optionText.toLowerCase() === categoryName.toLowerCase()) {
+                                        option.click(); // This will trigger the selection
+                                        categoryFound = true;
+                                        console.log('✅ Software category selected:', optionText);
+                                    }
+                                });
+                                
+                                if (!categoryFound) {
+                                    console.warn('⚠️ Category not found, selecting first available:', categoryName);
+                                    const firstCategory = document.querySelector('.category-option');
+                                    if (firstCategory) {
+                                        firstCategory.click();
+                                    }
+                                }
+                            }, 200);
+                        } else {
+                            // Fallback: set a default category to avoid validation error
+                            console.log('No categories found, selecting first available');
+                            setTimeout(() => {
+                                const firstCategory = document.querySelector('.category-option');
+                                if (firstCategory) {
+                                    firstCategory.click();
+                                    console.log('✅ Default category selected');
+                                }
+                            }, 200);
+                        }
+                        
+                        // Initialize tech stack tagify after setting value
+                        initializeTechStack();
+                        if (techStackTagify && software.tech_stack) {
+                            techStackTagify.addTags(software.tech_stack.split(',').map(t => t.trim()));
+                        }
+                    }, 500);
+                    
+                } else {
+                    console.error('❌ Failed to load software:', data.message);
+                    alert('Failed to load software data: ' + data.message);
+                }
+            } catch (error) {
+                console.error('❌ Error loading software:', error);
+                alert('Failed to load software data. Please try again.');
+            }
+        }
+
+        // Display existing images in the upload sections
+        // Function to initialize image previews in edit mode
+        function initializeEditImagePreviews(productData) {
+            console.log('📷 Initializing edit image previews:', productData);
+            
+            for (let i = 1; i <= 3; i++) {
+                const imageUrl = productData[`image${i}_url`];
+                
+                if (imageUrl) {
+                    console.log(`📷 Setting up existing image ${i}:`, imageUrl);
+                    
+                    // Find the image upload box by finding the input element and getting its parent
+                    const inputElement = document.getElementById(`image${i}`);
+                    const uploadBox = inputElement ? inputElement.closest('.image-upload-box') : null;
+                    const previewImg = document.getElementById(`preview${i}`);
+                    const uploadText = document.getElementById(`uploadText${i}`);
+                    
+                    if (uploadBox && previewImg && uploadText) {
+                        // Set the preview image
+                        previewImg.src = imageUrl;
+                        previewImg.style.display = 'block';
+                        
+                        // Update the upload box to show it has an image
+                        uploadBox.classList.add('has-image');
+                        
+                        // Update the text to indicate it's an existing image
+                        uploadText.textContent = `Current ${i === 1 ? 'Main Photo' : `Photo ${i}`}`;
+                        
+                        // Update the onclick to use triggerImageUpload instead of triggerCloudinaryUpload
+                        uploadBox.setAttribute('onclick', `triggerImageUpload(${i})`);
+                        
+                        // Show the remove button
+                        const removeBtn = uploadBox.querySelector('.remove-image');
+                        if (removeBtn) {
+                            removeBtn.style.display = 'block';
+                            removeBtn.setAttribute('onclick', `removeUploadedImage(${i})`);
+                        }
+                        
+                        console.log(`✅ Image ${i} preview set successfully`);
+                    } else {
+                        console.warn(`⚠️ Could not find upload elements for image ${i}`);
+                    }
+                }
+            }
+            
+            console.log('📷 Image previews initialized for edit mode');
+        }
+
+        function displayExistingImages(imageUrls) {
+            imageUrls.forEach((url, index) => {
+                if (url) {
+                    const uploadSection = document.getElementById(`upload${index + 1}`);
+                    if (uploadSection) {
+                        // Store the existing URL in a data attribute
+                        uploadSection.setAttribute('data-existing-url', url);
+                        
+                        uploadSection.innerHTML = `
+                            <div class="existing-image" style="position: relative; border: 2px solid #28a745; border-radius: 8px; padding: 10px; background-color: #f8fff8;">
+                                <img src="${url}" alt="Current image ${index + 1}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">
+                                <div style="text-align: center; margin-bottom: 10px;">
+                                    <p style="color: #28a745; font-weight: bold; font-size: 0.9rem; margin: 0;"><i class="bi bi-check-circle"></i> Current Image ${index + 1}</p>
+                                    <p style="color: #666; font-size: 0.8rem; margin: 5px 0 0 0;">Click below to replace with new image</p>
+                                </div>
+                                <button type="button" class="upload-btn" onclick="triggerImageUpload(${index + 1})" style="width: 100%; padding: 8px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                                    <i class="bi bi-cloud-upload"></i> Replace Image
+                                </button>
+                                <button type="button" onclick="removeExistingImage(${index + 1})" style="position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center;">
+                                    ×
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
+            });
+        }
+
+        // Function to trigger image upload for replacement
+        function triggerImageUpload(imageNumber) {
+            // Store which image slot we're replacing
+            if (cloudinaryWidget) {
+                cloudinaryWidget.currentImageNumber = imageNumber;
+                cloudinaryWidget.open();
+                console.log(`📤 Opening Cloudinary widget for image slot ${imageNumber}`);
+            } else {
+                console.warn('Cloudinary widget not available');
+                alert('Image upload not available. Please refresh the page and try again.');
+            }
+        }
+
+        // Function to remove existing image
+        function removeExistingImage(imageNumber) {
+            const inputElement = document.getElementById(`image${imageNumber}`);
+            const uploadBox = inputElement ? inputElement.closest('.image-upload-box') : null;
+            const previewImg = document.getElementById(`preview${imageNumber}`);
+            const uploadText = document.getElementById(`uploadText${imageNumber}`);
+            
+            if (uploadBox && previewImg && uploadText) {
+                // Remove from uploadedImages
+                delete uploadedImages[`image${imageNumber}`];
+                
+                // Hide the preview image
+                previewImg.style.display = 'none';
+                previewImg.src = '';
+                
+                // Remove the has-image class
+                uploadBox.classList.remove('has-image');
+                
+                // Reset the text
+                uploadText.textContent = imageNumber === 1 ? 'Main Photo' : `Photo ${imageNumber}`;
+                
+                // Reset the onclick to original function
+                uploadBox.setAttribute('onclick', `triggerCloudinaryUpload(${imageNumber})`);
+                
+                // Hide the remove button
+                const removeBtn = uploadBox.querySelector('.remove-image');
+                if (removeBtn) {
+                    removeBtn.style.display = 'none';
+                }
+                
+                console.log(`🗑️ Removed image ${imageNumber} from upload queue`);
+            }
+        }
+
+        // Function to remove uploaded images (same as removeExistingImage but with different naming for clarity)
+        function removeUploadedImage(imageNumber) {
+            removeExistingImage(imageNumber);
+        }
+
         // Load user profile and auto-fill fields
         async function loadUserProfile() {
             try {
@@ -1159,6 +1538,9 @@
             loadUserProfile();
             loadDefaultCategories();
             loadSoftwareCategories();
+            
+            // Check if we're in edit mode
+            checkEditMode();
             
             // Add event listeners to radio buttons
             const donationRadio = document.getElementById('donation');
@@ -1397,7 +1779,22 @@
 
         // Helper function to get image URLs (now returns Cloudinary URLs)
         function getImageData(number) {
-            return uploadedImages[`image${number}`] || null;
+            // First check if there's a newly uploaded image
+            const newImageUrl = uploadedImages[`image${number}`];
+            if (newImageUrl) {
+                return newImageUrl;
+            }
+            
+            // Then check if there's an existing image (for edit mode)
+            const uploadSection = document.getElementById(`upload${number}`);
+            if (uploadSection) {
+                const existingImageUrl = uploadSection.getAttribute('data-existing-url');
+                if (existingImageUrl) {
+                    return existingImageUrl;
+                }
+            }
+            
+            return null;
         }
 
         // Form submission handler
@@ -1544,16 +1941,77 @@
                 // Define productType for use in both success and error cases
                 const productType = category === 'software' ? 'software' : 'item';
 
-                // Submit to backend
-                const response = await fetch('/api/add-product-direct', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
+                let response, result;
 
-                const result = await response.json();
+                // Choose endpoint based on edit mode
+                if (isEditMode) {
+                    console.log(`🔧 Updating ${editProductType} product (ID: ${editProductId})`);
+                    
+                    if (editProductType === 'software') {
+                        // Update software product
+                        response = await fetch(`/api/software/${editProductId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                name: formData.name,
+                                description: formData.description,
+                                tagline: formData.tagline,
+                                price: formData.price,
+                                image1_url: formData.imageUrls.image1 || null,
+                                image2_url: formData.imageUrls.image2 || null,
+                                image3_url: formData.imageUrls.image3 || null,
+                                platform: formData.platform,
+                                tech_stack: formData.techStack,
+                                developer_name: formData.developerName,
+                                license_type: formData.licenseType,
+                                version: formData.version,
+                                download_link: formData.downloadLink,
+                                demo_link: formData.demoLink,
+                                github_link: formData.githubLink,
+                                documentation_link: formData.documentationLink,
+                                features: formData.features ? formData.features.split('\n').filter(f => f.trim()) : [],
+                                system_requirements: {
+                                    minOs: document.getElementById('minOs')?.value || '',
+                                    minRam: document.getElementById('minRam')?.value || '',
+                                    minStorage: document.getElementById('minStorage')?.value || '',
+                                    minProcessor: document.getElementById('minProcessor')?.value || ''
+                                },
+                                categories: formData.categoryId ? [document.querySelector(`#softwareCategories .category-option[data-category-id="${formData.categoryId}"]`)?.textContent?.trim()] : []
+                            })
+                        });
+                    } else {
+                        // Update regular product
+                        response = await fetch(`/api/products/${editProductId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                name: formData.name,
+                                description: formData.description,
+                                price: formData.price,
+                                category: formData.category,
+                                condition: formData.condition,
+                                image1_url: formData.imageUrls.image1 || null,
+                                image2_url: formData.imageUrls.image2 || null,
+                                image3_url: formData.imageUrls.image3 || null
+                            })
+                        });
+                    }
+                } else {
+                    // Create new product
+                    response = await fetch('/api/add-product-direct', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                }
+
+                result = await response.json();
                 console.log('📨 Server response:', result);
 
                 // Restore button
@@ -1563,8 +2021,9 @@
                 if (result.success) {
                     const imageCount = Object.keys(imageUrls).length;
                     const imageText = imageCount > 0 ? ` with ${imageCount} image(s)` : '';
+                    const actionText = isEditMode ? 'updated' : 'listed';
                     
-                    alert(`${productType} listed successfully${imageText}! You will be redirected to your items page.`);
+                    alert(`${productType} ${actionText} successfully${imageText}! You will be redirected to your items page.`);
 
                     // Navigate back to My Items
                     if (window.parent && window.parent !== window) {
@@ -1577,8 +2036,9 @@
                     }
                 } else {
                     console.error('❌ Submission failed:', result.message);
+                    const actionText = isEditMode ? 'update' : 'add';
                     if (response.status === 401) {
-                        alert('Please log in to add items');
+                        alert(`Please log in to ${actionText} items`);
                         if (window.parent && window.parent !== window) {
                             window.parent.postMessage({
                                 type: 'navigate',
@@ -1588,7 +2048,7 @@
                             window.location.href = 'login.html';
                         }
                     } else {
-                        alert(`Failed to list ${productType}: ${result.message}`);
+                        alert(`Failed to ${actionText} ${productType}: ${result.message}`);
                     }
                 }
 
@@ -1598,7 +2058,8 @@
                 
                 // Restore button on error
                 const submitBtn = this.querySelector('button[type="submit"]');
-                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> List Item';
+                const buttonText = isEditMode ? '<i class="bi bi-check-circle"></i> Update Item' : '<i class="bi bi-check-circle"></i> List Item';
+                submitBtn.innerHTML = buttonText;
                 submitBtn.disabled = false;
             }
         });

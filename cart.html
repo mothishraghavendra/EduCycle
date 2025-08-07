@@ -111,29 +111,35 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+        }
+
+        .item-details:hover {
+            background-color: #f8f9fa;
         }
 
         .item-title {
             font-size: 1.1rem;
             font-weight: bold;
             color: #0066cc;
-            cursor: pointer;
             line-height: 1.4;
-        }
-
-        .item-title:hover {
-            text-decoration: underline;
+            pointer-events: none;
         }
 
         .item-seller {
             font-size: 0.9rem;
             color: #666;
+            pointer-events: none;
         }
 
         .item-condition {
             font-size: 0.9rem;
             color: #28a745;
             font-weight: 500;
+            pointer-events: none;
         }
 
         .item-delivery {
@@ -142,6 +148,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
+            pointer-events: none;
         }
 
         .delivery-free {
@@ -230,12 +237,6 @@
         .control-btn:hover {
             background-color: #f0f0f0;
             border-color: #999;
-        }
-
-        .control-btn.save:hover {
-            background-color: #e6f3ff;
-            border-color: #0066cc;
-            color: #0066cc;
         }
 
         .control-btn.delete:hover {
@@ -481,6 +482,42 @@
         .promo-btn:hover {
             background-color: #004499;
         }
+
+        /* Product badges */
+        .software-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #007bff, #0066cc);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+        }
+
+        .condition-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+        }
+
+        .cart-item {
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -578,25 +615,36 @@
 
         // Create cart item HTML
         function createCartItemCard(item) {
-            const imageUrl = item.product_image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiBmaWxsPSIjRjhGOEY4Ii8+CjxwYXRoIGQ9Ik00MCA0MEg4MEg4MEg0MFY0MFoiIGZpbGw9IiNDQ0NDQ0MiLz4KPC9zdmc+Cg==';
+            const imageUrl = item.product_image || item.image1_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiBmaWxsPSIjRjhGOEY4Ii8+CjxwYXRoIGQ9Ik00MCA0MEg4MEg4MEg0MFY0MFoiIGZpbGw9IiNDQ0NDQ0MiLz4KPC9zdmc+Cg==';
             const hasValidPhone = isValidPhoneNumber(item.seller_phone);
             const phoneDisplay = hasValidPhone ? formatPhoneDisplay(item.seller_phone) : '';
             
+            // Determine product type and appropriate badges
+            const isSoftware = item.product_type === 'software' || item.category === 'software' || item.software_id;
+            const productBadge = isSoftware ? 
+                '<div class="software-badge"><i class="bi bi-code-slash"></i> Software</div>' : 
+                (item.product_condition ? `<div class="condition-badge">${item.product_condition}</div>` : '');
+            
             return `
-                <div class="cart-item" data-cart-id="${item.cart_id}" data-product-id="${item.product_id}">
-                    <div class="item-image">
-                        <img src="${imageUrl}" alt="${item.product_name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" 
+                <div class="cart-item" data-cart-id="${item.cart_id}" data-product-id="${item.product_id || item.software_id}" data-product-type="${isSoftware ? 'software' : 'regular'}">
+                    ${productBadge}
+                    <div class="item-image" onclick="viewProductDetails(${item.product_id || item.software_id}, '${isSoftware ? 'software' : 'regular'}')">
+                        <img src="${imageUrl}" alt="${item.product_name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; cursor: pointer;" 
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <i class="bi bi-box" style="font-size: 3rem; display: none;"></i>
+                        <i class="bi bi-${isSoftware ? 'code-slash' : 'box'}" style="font-size: 3rem; display: none; cursor: pointer;"></i>
                     </div>
-                    <div class="item-details">
+                    <div class="item-details" onclick="viewProductDetails(${item.product_id || item.software_id}, '${isSoftware ? 'software' : 'regular'}')" style="cursor: pointer;">
                         <div class="item-title">${item.product_name}</div>
                         <div class="item-seller">Sold by: ${item.seller_name}</div>
                         ${hasValidPhone ? `<div class="seller-phone" style="font-size: 0.85rem; color: #28a745; margin: 3px 0;">📞 ${phoneDisplay}</div>` : ''}
-                        <div class="item-condition">${item.product_condition || 'Good Condition'}</div>
+                        ${isSoftware ? 
+                            `<div class="item-platform" style="font-size: 0.9rem; color: #007bff; margin: 3px 0;"><i class="bi bi-laptop"></i> ${item.platform || 'Multi-platform'}</div>
+                             ${item.tech_stack ? `<div class="item-tech" style="font-size: 0.8rem; color: #666; margin: 3px 0;"><strong>Tech:</strong> ${item.tech_stack}</div>` : ''}` :
+                            `<div class="item-condition">${item.product_condition || 'Good Condition'}</div>`
+                        }
                         ${item.product_description ? `<div class="item-description" style="font-size: 0.9rem; color: #666; margin: 5px 0; line-height: 1.3;">${item.product_description.substring(0, 100)}${item.product_description.length > 100 ? '...' : ''}</div>` : ''}
                         ${hasValidPhone ? 
-                            `<button class="contact-seller-btn" onclick="contactSeller('${item.seller_name}', '${item.product_name}', '${item.seller_phone || ''}')">
+                            `<button class="contact-seller-btn" onclick="event.stopPropagation(); contactSeller('${item.seller_name.replace(/'/g, "\\'")}', '${item.product_name.replace(/'/g, "\\'")}', '${(item.seller_phone || '').replace(/'/g, "\\'")}')">
                                 <i class="bi bi-whatsapp"></i>
                                 Contact Seller
                             </button>` :
@@ -605,14 +653,11 @@
                                 Contact Unavailable
                             </button>`
                         }
-                        <div class="item-controls">
-                            <button class="control-btn save" title="Save for later" onclick="saveForLater(${item.cart_id}, '${item.product_name}')">
-                                <i class="bi bi-heart"></i>
-                            </button>
-                            <button class="control-btn delete" title="Delete" onclick="removeFromCart(${item.cart_id}, '${item.product_name}')">
+                        <div class="item-controls" onclick="event.stopPropagation();">
+                            <button class="control-btn delete" title="Delete" onclick="event.stopPropagation(); removeFromCart(${item.cart_id}, '${item.product_name.replace(/'/g, "\\'")}')">
                                 <i class="bi bi-trash"></i>
                             </button>
-                            <button class="control-btn share" title="Share" onclick="shareItem('${item.product_name}')">
+                            <button class="control-btn share" title="Share" onclick="event.stopPropagation(); shareItem('${item.product_name.replace(/'/g, "\\'")}', ${item.product_id || item.software_id}, '${isSoftware ? 'software' : 'regular'}')">
                                 <i class="bi bi-share"></i>
                             </button>
                         </div>
@@ -630,22 +675,35 @@
         async function loadCartItems() {
             try {
                 console.log('🔄 Loading cart items...');
-                const response = await fetch('/api/cart');
+                
+                const response = await fetch('/api/cart', {
+                    method: 'GET',
+                    credentials: 'include' // Include cookies for session
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
 
                 if (data.success) {
-                    cartItems = data.cartItems;
+                    cartItems = Array.isArray(data.cartItems) ? data.cartItems : [];
                     console.log('✅ Loaded cart items:', cartItems.length);
                     renderCartItems(cartItems);
-                    updateCartSummary(cartItems, data.total);
+                    updateCartSummary(cartItems, data.total || 0);
                     
                     // Notify parent dashboard about current cart count
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({
-                            type: 'cartUpdated',
-                            action: 'update',
-                            count: cartItems.length
-                        }, '*');
+                        try {
+                            window.parent.postMessage({
+                                type: 'cartUpdated',
+                                action: 'update',
+                                count: cartItems.length
+                            }, '*');
+                        } catch (msgError) {
+                            console.warn('Could not notify parent window:', msgError);
+                        }
                     }
                 } else {
                     console.error('❌ Failed to load cart:', data.message);
@@ -653,7 +711,11 @@
                 }
             } catch (error) {
                 console.error('❌ Error loading cart:', error);
-                showError('Unable to connect to server. Please try again later.');
+                if (error.message.includes('401')) {
+                    showError('Please log in to view your cart.');
+                } else {
+                    showError('Unable to connect to server. Please try again later.');
+                }
             }
         }
 
@@ -710,14 +772,28 @@
 
         // Remove item from cart
         async function removeFromCart(cartId, productName) {
-            if (!confirm(`Remove "${productName}" from your cart?`)) {
+            // Clean up parameters
+            const cleanProductName = (productName || 'this item').toString().trim();
+            const cleanCartId = parseInt(cartId);
+            
+            if (isNaN(cleanCartId) || cleanCartId <= 0) {
+                console.error('Invalid cart ID:', cartId);
+                alert('Unable to remove item. Invalid cart ID.');
+                return;
+            }
+            
+            if (!confirm(`Remove "${cleanProductName}" from your cart?`)) {
                 return;
             }
 
             try {
-                const response = await fetch(`/api/cart/${cartId}`, {
+                const response = await fetch(`/api/cart/${cleanCartId}`, {
                     method: 'DELETE'
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
                 const data = await response.json();
                 
@@ -727,11 +803,15 @@
                     
                     // Notify parent dashboard about cart update
                     if (window.parent && window.parent !== window) {
-                        window.parent.postMessage({
-                            type: 'cartUpdated',
-                            action: 'remove',
-                            cartId: cartId
-                        }, '*');
+                        try {
+                            window.parent.postMessage({
+                                type: 'cartUpdated',
+                                action: 'remove',
+                                cartId: cleanCartId
+                            }, '*');
+                        } catch (msgError) {
+                            console.warn('Could not notify parent window:', msgError);
+                        }
                     }
                 } else {
                     alert('Failed to remove item: ' + (data.message || 'Unknown error'));
@@ -742,64 +822,97 @@
             }
         }
 
-        // Save for later (wishlist functionality)
-        async function saveForLater(cartId, productName) {
+        // Share item
+        function shareItem(productName, productId, productType) {
             try {
-                // For now, we'll just show a message and toggle the heart
-                alert(`"${productName}" saved for later!`);
+                const cleanProductName = (productName || 'this item').toString().trim();
+                const cleanProductId = parseInt(productId);
+                const cleanProductType = (productType || 'regular').toString().trim();
                 
-                // Toggle heart icon
-                const button = document.querySelector(`[data-cart-id="${cartId}"] .control-btn.save`);
-                const icon = button.querySelector('i');
+                console.log('Share:', { cleanProductName, cleanProductId, cleanProductType });
                 
-                if (icon.classList.contains('bi-heart')) {
-                    icon.classList.remove('bi-heart');
-                    icon.classList.add('bi-heart-fill');
-                    button.style.color = '#dc3545';
+                // Create the product detail URL
+                let productUrl;
+                if (cleanProductType === 'software') {
+                    productUrl = `${window.location.origin}/software_detail.html?id=${cleanProductId}`;
                 } else {
-                    icon.classList.remove('bi-heart-fill');
-                    icon.classList.add('bi-heart');
-                    button.style.color = '';
+                    productUrl = `${window.location.origin}/regular_product_detail.html?id=${cleanProductId}`;
                 }
                 
-                // TODO: Implement proper wishlist functionality
-                console.log('Saved for later:', productName);
+                const shareData = {
+                    title: `${cleanProductName} - Educycle`,
+                    text: `Check out this ${cleanProductType === 'software' ? 'software' : 'item'} on Educycle: ${cleanProductName}`,
+                    url: productUrl
+                };
+                
+                if (navigator.share) {
+                    navigator.share(shareData).catch(error => {
+                        console.log('Share was cancelled or failed:', error);
+                        // Fallback to clipboard
+                        fallbackShare(shareData);
+                    });
+                } else {
+                    // Fallback for browsers without Web Share API
+                    fallbackShare(shareData);
+                }
             } catch (error) {
-                console.error('Error saving item:', error);
-                alert('Failed to save item. Please try again.');
+                console.error('Error sharing item:', error);
+                alert('Unable to share item at this time.');
             }
         }
-
-        // Share item
-        function shareItem(productName) {
-            console.log('Share:', productName);
-            if (navigator.share) {
-                navigator.share({
-                    title: productName,
-                    text: `Check out this item on Educycle: ${productName}`,
-                    url: window.location.href
+        
+        // Fallback share function
+        function fallbackShare(shareData) {
+            const shareText = `${shareData.text}\n${shareData.url}`;
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('Product link copied to clipboard! You can now paste it anywhere to share.');
+                }).catch(() => {
+                    // Very old browser fallback
+                    promptShare(shareText);
                 });
             } else {
-                // Fallback: copy to clipboard
-                navigator.clipboard.writeText(`Check out this item on Educycle: ${productName}`).then(() => {
-                    alert('Item details copied to clipboard!');
-                }).catch(() => {
-                    alert('Item link ready to share!');
-                });
+                // Very old browser fallback
+                promptShare(shareText);
             }
+        }
+        
+        // Prompt user to manually copy
+        function promptShare(shareText) {
+            const textArea = document.createElement('textarea');
+            textArea.value = shareText;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                alert('Product link copied to clipboard! You can now paste it anywhere to share.');
+            } catch (err) {
+                alert(`Share this product:\n\n${shareText}`);
+            }
+            
+            document.body.removeChild(textArea);
         }
 
         // Contact seller via WhatsApp
         function contactSeller(sellerName, productName, sellerPhone) {
             console.log('Contacting seller:', { sellerName, productName, sellerPhone });
             
-            if (!sellerPhone || sellerPhone.trim() === '') {
+            // Clean up parameters to avoid undefined/null issues
+            const cleanSellerName = (sellerName || 'Seller').toString().trim();
+            const cleanProductName = (productName || 'Product').toString().trim();
+            const cleanSellerPhone = (sellerPhone || '').toString().trim();
+            
+            if (!cleanSellerPhone || cleanSellerPhone === '') {
                 alert('Seller phone number not available. Please try contacting through other means.');
                 return;
             }
             
             // Clean and format phone number (remove any non-digits and ensure it starts with country code)
-            let phoneNumber = sellerPhone.replace(/\D/g, ''); // Remove all non-digits
+            let phoneNumber = cleanSellerPhone.replace(/\D/g, ''); // Remove all non-digits
             
             // If phone number doesn't start with country code, assume it's Indian (+91)
             if (phoneNumber.length === 10) {
@@ -816,10 +929,10 @@
             }
             
             // Create a detailed message
-            const message = `🎓 Hi ${sellerName}! 
+            const message = `🎓 Hi ${cleanSellerName}! 
 
 I found your product on Educycle and I'm interested in:
-📚 *${productName}*
+📚 *${cleanProductName}*
 
 Could you please provide more details about:
 • Current condition
@@ -834,7 +947,12 @@ Thanks! 😊
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
             
             console.log('Opening WhatsApp URL:', whatsappUrl);
-            window.open(whatsappUrl, '_blank');
+            try {
+                window.open(whatsappUrl, '_blank');
+            } catch (error) {
+                console.error('Error opening WhatsApp:', error);
+                alert('Unable to open WhatsApp. Please try again.');
+            }
         }
 
         // Navigate back to shopping
@@ -846,6 +964,53 @@ Thanks! 😊
                 }, '*');
             } else {
                 window.location.href = 'main.html';
+            }
+        }
+
+        // View product details (navigate to appropriate detail page)
+        function viewProductDetails(productId, productType) {
+            console.log('Viewing product:', { productId, productType });
+            
+            if (!productId || productId === 'null' || productId === 'undefined') {
+                console.error('Invalid product ID provided:', productId);
+                alert('Unable to view product details. Product ID is missing.');
+                return;
+            }
+
+            // Convert to number if it's a string
+            const numericProductId = parseInt(productId);
+            if (isNaN(numericProductId) || numericProductId <= 0) {
+                console.error('Invalid product ID format:', productId);
+                alert('Unable to view product details. Invalid product ID.');
+                return;
+            }
+
+            // Determine the correct detail page URL
+            let detailPageUrl;
+            if (productType === 'software') {
+                detailPageUrl = `software_detail.html?id=${numericProductId}`;
+            } else {
+                detailPageUrl = `regular_product_detail.html?id=${numericProductId}`;
+            }
+
+            console.log('Navigating to:', detailPageUrl);
+
+            // Navigate to the detail page
+            try {
+                if (window.parent && window.parent !== window) {
+                    // If inside iframe/dashboard, use postMessage
+                    window.parent.postMessage({
+                        type: 'navigate',
+                        page: detailPageUrl
+                    }, '*');
+                } else {
+                    // Direct navigation
+                    window.location.href = detailPageUrl;
+                }
+            } catch (error) {
+                console.error('Navigation error:', error);
+                // Fallback to direct navigation
+                window.location.href = detailPageUrl;
             }
         }
 

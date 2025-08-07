@@ -1255,6 +1255,329 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
+// Get all products (both regular and software) for home page
+app.get('/api/all-products', async (req, res) => {
+    try {
+        const { category, search } = req.query;
+        
+        // Fetch regular products
+        let regularQuery = `
+            SELECT 
+                p.product_id,
+                p.name,
+                p.description,
+                p.price,
+                p.category,
+                p.condition_item,
+                p.image1_url,
+                p.image2_url,
+                p.image3_url,
+                p.image1,
+                p.image2,
+                p.image3,
+                p.created_at,
+                u.username as seller_name,
+                u.location as seller_location,
+                u.phone as seller_phone,
+                'regular' as product_type
+            FROM products p
+            JOIN users u ON p.user_id = u.id
+            WHERE 1=1
+        `;
+        const regularParams = [];
+
+        // Exclude current user's products if logged in
+        if (req.session.userId) {
+            regularQuery += ' AND p.user_id != ?';
+            regularParams.push(req.session.userId);
+        }
+
+        // Filter by category for regular products
+        if (category && category !== 'all' && category !== 'software') {
+            regularQuery += ' AND p.category LIKE ?';
+            regularParams.push(`%${category}%`);
+        }
+
+        // Search filter for regular products
+        if (search) {
+            regularQuery += ' AND (p.name LIKE ? OR p.description LIKE ?)';
+            regularParams.push(`%${search}%`, `%${search}%`);
+        }
+
+        regularQuery += ' ORDER BY p.created_at DESC';
+
+        const [regularProducts] = await promisePool.execute(regularQuery, regularParams);
+
+        // Process regular products images
+        const regularProductsWithImages = regularProducts.map(product => ({
+            ...product,
+            image1: product.image1_url || (product.image1 ? `data:image/jpeg;base64,${product.image1.toString('base64')}` : null),
+            image2: product.image2_url || (product.image2 ? `data:image/jpeg;base64,${product.image2.toString('base64')}` : null),
+            image3: product.image3_url || (product.image3 ? `data:image/jpeg;base64,${product.image3.toString('base64')}` : null),
+            image1_url: undefined,
+            image2_url: undefined,
+            image3_url: undefined
+        }));
+
+        // Fetch software products
+        let softwareQuery = `
+            SELECT 
+                sp.software_id as product_id,
+                sp.name,
+                sp.description,
+                sp.price,
+                sp.image1_url,
+                sp.image2_url,
+                sp.image3_url,
+                sp.platform,
+                sp.tech_stack,
+                sp.developer_name,
+                sp.created_at,
+                u.username as seller_name,
+                u.location as seller_location,
+                NULL as seller_phone,
+                'software' as product_type,
+                'software' as category,
+                'New' as condition_item
+            FROM software_products sp
+            JOIN users u ON sp.user_id = u.id
+            WHERE sp.is_active = true
+        `;
+        const softwareParams = [];
+
+        // Exclude current user's software if logged in
+        if (req.session.userId) {
+            softwareQuery += ' AND sp.user_id != ?';
+            softwareParams.push(req.session.userId);
+        }
+
+        // Filter by category for software products (only include if category is 'software' or 'all')
+        if (category && category !== 'all' && category === 'software') {
+            // Include all software products when category is 'software'
+        } else if (category && category !== 'all' && category !== 'software') {
+            // Exclude software products if a specific non-software category is selected
+            softwareQuery += ' AND 1=0'; // This will exclude all software products
+        }
+
+        // Search filter for software products
+        if (search) {
+            softwareQuery += ' AND (sp.name LIKE ? OR sp.description LIKE ? OR sp.tech_stack LIKE ?)';
+            softwareParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
+        }
+
+        softwareQuery += ' ORDER BY sp.created_at DESC';
+
+        const [softwareProducts] = await promisePool.execute(softwareQuery, softwareParams);
+
+        // Process software products images
+        const softwareProductsWithImages = softwareProducts.map(product => ({
+            ...product,
+            image1: product.image1_url,
+            image2: product.image2_url,
+            image3: product.image3_url,
+            image1_url: undefined,
+            image2_url: undefined,
+            image3_url: undefined
+        }));
+
+        // Combine all products
+        const allProducts = [...regularProductsWithImages, ...softwareProductsWithImages];
+        
+        // Sort combined products by creation date (newest first)
+        allProducts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        res.json({
+            success: true,
+            products: allProducts,
+            count: allProducts.length,
+            breakdown: {
+                regular: regularProductsWithImages.length,
+                software: softwareProductsWithImages.length
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Get all products error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch products'
+        });
+    }
+});
+
+// Search API endpoint for both products and software
+app.get('/api/search', async (req, res) => {
+    try {
+        const { category, search } = req.query;
+        let allResults = [];
+        // Validate and sanitize limit
+        let limit = 10;
+        if (req.query.limit) {
+            const parsedLimit = parseInt(req.query.limit);
+            if (!isNaN(parsedLimit) && parsedLimit > 0 && parsedLimit <= 100) {
+                limit = parsedLimit;
+            }
+        }
+
+        // --- REGULAR PRODUCTS SEARCH ---
+        if (!category || category !== 'software') {
+            let regularQuery = `
+                SELECT 
+                    p.product_id,
+                    p.name,
+                    p.description,
+                    p.price,
+                    p.category,
+                    p.condition_item,
+                    p.image1_url,
+                    p.image2_url,
+                    p.image3_url,
+                    p.image1,
+                    p.image2,
+                    p.image3,
+                    p.created_at,
+                    u.username as seller_name,
+                    u.location as seller_location,
+                    u.phone as seller_phone,
+                    'regular' as product_type
+                FROM products p
+                JOIN users u ON p.user_id = u.id
+                WHERE 1=1
+            `;
+            const regularParams = [];
+
+            // Exclude current user's products if logged in
+            if (req.session && req.session.userId) {
+                regularQuery += ' AND p.user_id != ?';
+                regularParams.push(req.session.userId);
+            }
+
+            // Category filter for regular products
+            let hasCategory = false;
+            if (category && category !== 'all' && category !== 'software') {
+                regularQuery += ' AND INSTR(LOWER(p.category), ?) > 0';
+                regularParams.push(category.toLowerCase());
+                hasCategory = true;
+            }
+
+            // Search filter for regular products (case-insensitive, only if 3+ chars)
+            let hasSearch = false;
+            if (search && search.trim().length >= 3) {
+                regularQuery += ' AND (LOWER(p.name) LIKE ? OR LOWER(p.description) LIKE ? OR LOWER(p.category) LIKE ?)';
+                const s = `%${search.toLowerCase()}%`;
+                regularParams.push(s, s, s);
+                hasSearch = true;
+            }
+
+            regularQuery += ` ORDER BY p.created_at DESC LIMIT ${limit}`;
+
+            // Debug: print query and params
+            console.log('🔍 Regular query:', regularQuery);
+            console.log('🔍 Regular params:', regularParams);
+
+            // Only execute if params match placeholders
+            const [regularProducts] = await promisePool.execute(regularQuery, regularParams);
+
+            // Process regular products
+            const processedRegularProducts = regularProducts.map(product => ({
+                ...product,
+                image1: product.image1_url || (product.image1 ? `data:image/jpeg;base64,${product.image1.toString('base64')}` : null),
+                image2: product.image2_url || (product.image2 ? `data:image/jpeg;base64,${product.image2.toString('base64')}` : null),
+                image3: product.image3_url || (product.image3 ? `data:image/jpeg;base64,${product.image3.toString('base64')}` : null),
+                image1_url: product.image1_url,
+                image2_url: undefined,
+                image3_url: undefined
+            }));
+
+            allResults = [...allResults, ...processedRegularProducts];
+        }
+
+        // Search software products only if category is 'software' or 'all' or not specified
+        if (!category || category === 'all' || category === 'software') {
+            let softwareQuery = `
+                SELECT 
+                    sp.software_id,
+                    sp.name,
+                    sp.description,
+                    sp.tagline,
+                    sp.price,
+                    sp.image1_url,
+                    sp.image2_url,
+                    sp.image3_url,
+                    sp.platform,
+                    sp.tech_stack,
+                    sp.developer_name,
+                    sp.created_at,
+                    u.username as seller_name,
+                    u.location as seller_location,
+                    NULL as seller_phone,
+                    'software' as product_type,
+                    'software' as category,
+                    'New' as condition_item
+                FROM software_products sp
+                JOIN users u ON sp.user_id = u.id
+                WHERE sp.is_active = true
+            `;
+            const softwareParams = [];
+
+            // Exclude current user's software if logged in
+            if (req.session.userId) {
+                softwareQuery += ' AND sp.user_id != ?';
+                softwareParams.push(req.session.userId);
+            }
+
+            // Search filter for software products (case-insensitive)
+            if (search) {
+                softwareQuery += ' AND (LOWER(sp.name) LIKE ? OR LOWER(sp.description) LIKE ? OR LOWER(sp.tagline) LIKE ? OR LOWER(sp.tech_stack) LIKE ? OR LOWER(sp.developer_name) LIKE ?)';
+                softwareParams.push(`%${search.toLowerCase()}%`, `%${search.toLowerCase()}%`, `%${search.toLowerCase()}%`, `%${search.toLowerCase()}%`, `%${search.toLowerCase()}%`);
+            }
+
+            softwareQuery += ` ORDER BY sp.created_at DESC LIMIT ${limit}`;
+
+            console.log('🔍 Software query:', softwareQuery);
+            console.log('🔍 Software params:', softwareParams);
+
+            const [softwareProducts] = await promisePool.execute(softwareQuery, softwareParams);
+
+            // Process software products
+            const processedSoftwareProducts = softwareProducts.map(product => ({
+                ...product,
+                image1: product.image1_url,
+                image2: product.image2_url,
+                image3: product.image3_url,
+                image1_url: product.image1_url,
+                image2_url: undefined,
+                image3_url: undefined
+            }));
+
+            allResults = [...allResults, ...processedSoftwareProducts];
+        }
+
+        // Sort combined results by relevance and date
+        allResults.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        // Limit final results
+        const finalResults = allResults.slice(0, parseInt(limit));
+
+        res.json({
+            success: true,
+            products: finalResults,
+            count: finalResults.length,
+            breakdown: {
+                regular: finalResults.filter(p => p.product_type === 'regular').length,
+                software: finalResults.filter(p => p.product_type === 'software').length
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Search error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to perform search'
+        });
+    }
+});
+
 // Get user's own products
 app.get('/api/my-products', async (req, res) => {
     if (!req.session.userId) {
@@ -1440,6 +1763,101 @@ app.get('/api/software', async (req, res) => {
     }
 });
 
+// Get software product for editing (no view count increment)
+app.get('/api/software/:id/edit', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ success: false, message: 'Please log in' });
+    }
+
+    try {
+        const softwareId = req.params.id;
+        
+        // Get software details with user verification
+        const [software] = await promisePool.execute(`
+            SELECT 
+                sp.*,
+                u.username as seller_name
+            FROM software_products sp
+            JOIN users u ON sp.user_id = u.id
+            WHERE sp.software_id = ? AND sp.user_id = ? AND sp.is_active = true
+        `, [softwareId, req.session.userId]);
+
+        if (software.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Software not found or you do not have permission to edit it'
+            });
+        }
+
+        const product = software[0];
+
+        // Get software categories
+        const [categories] = await promisePool.execute(`
+            SELECT sc.name, sc.icon
+            FROM software_categories spc
+            JOIN categories sc ON spc.category_id = sc.id
+            WHERE spc.software_id = ?
+        `, [softwareId]);
+
+        // Parse features and system requirements
+        let features = [];
+        let systemRequirements = {};
+
+        if (product.features) {
+            try {
+                features = JSON.parse(product.features);
+            } catch (e) {
+                features = product.features.split(',').map(f => f.trim());
+            }
+        }
+
+        if (product.system_requirements) {
+            try {
+                systemRequirements = JSON.parse(product.system_requirements);
+            } catch (e) {
+                systemRequirements = { general: product.system_requirements };
+            }
+        }
+
+        // Prepare response for editing
+        const softwareEdit = {
+            software_id: product.software_id,
+            name: product.name,
+            description: product.description,
+            tagline: product.tagline,
+            price: parseFloat(product.price),
+            image1_url: product.image1_url,
+            image2_url: product.image2_url,
+            image3_url: product.image3_url,
+            platform: product.platform,
+            tech_stack: product.tech_stack,
+            developer_name: product.developer_name,
+            license_type: product.license_type,
+            version: product.version,
+            download_link: product.download_link,
+            demo_link: product.demo_link,
+            github_link: product.github_link,
+            documentation_link: product.documentation_link,
+            features: features,
+            system_requirements: systemRequirements,
+            categories: categories.map(cat => ({ name: cat.name, icon: cat.icon })),
+            created_at: product.created_at
+        };
+
+        res.json({
+            success: true,
+            software: softwareEdit
+        });
+
+    } catch (error) {
+        console.error('❌ Get software for edit error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get software details'
+        });
+    }
+});
+
 // Get single software product details
 app.get('/api/software/:id', async (req, res) => {
     try {
@@ -1484,7 +1902,7 @@ app.get('/api/software/:id', async (req, res) => {
                 u.created_at as seller_member_since
             FROM software_products sp
             JOIN users u ON sp.user_id = u.id
-            WHERE sp.software_id = ? AND sp.is_active = true
+            WHERE sp.software_id = ? AND sp.is_active = 1
         `, [softwareId]);
 
         if (software.length === 0) {
@@ -1519,7 +1937,7 @@ app.get('/api/software/:id', async (req, res) => {
                 COUNT(*) as total_software_count,
                 SUM(downloads_count) as total_downloads
             FROM software_products 
-            WHERE user_id = ? AND is_active = true
+            WHERE user_id = ? AND is_active = 1
         `, [product.seller_id]);
 
         // Increment view count
@@ -2201,7 +2619,8 @@ app.get('/api/cart', async (req, res) => {
     }
 
     try {
-        const [cartItems] = await promisePool.execute(`
+        // Get regular products from cart
+        const [regularCartItems] = await promisePool.execute(`
             SELECT 
                 c.cart_id,
                 c.product_id,
@@ -2216,28 +2635,66 @@ app.get('/api/cart', async (req, res) => {
                 c.product_image,
                 c.quantity,
                 c.added_at,
-                u.phone as seller_phone
+                u.phone as seller_phone,
+                'regular' as product_type
             FROM cart c
             LEFT JOIN users u ON c.seller_id = u.id
             WHERE c.user_id = ?
-            ORDER BY c.added_at DESC
         `, [req.session.userId]);
 
+        // Get software products from software_cart
+        let softwareCartItems = [];
+        try {
+            const [softwareItems] = await promisePool.execute(`
+                SELECT 
+                    sc.cart_id,
+                    sc.software_id as product_id,
+                    sp.name as product_name,
+                    sp.price as product_price,
+                    'software' as product_category,
+                    'New' as product_condition,
+                    sp.description as product_description,
+                    sp.user_id as seller_id,
+                    u.username as seller_name,
+                    sp.image1_url as product_image_url,
+                    null as product_image,
+                    1 as quantity,
+                    sc.added_at,
+                    u.phone as seller_phone,
+                    'software' as product_type,
+                    sp.platform,
+                    sp.tech_stack
+                FROM software_cart sc
+                JOIN software_products sp ON sc.software_id = sp.software_id
+                LEFT JOIN users u ON sp.user_id = u.id
+                WHERE sc.user_id = ?
+            `, [req.session.userId]);
+            softwareCartItems = softwareItems;
+        } catch (error) {
+            console.warn('Software cart table not available:', error.message);
+        }
+
+        // Combine both cart types
+        const allCartItems = [...regularCartItems, ...softwareCartItems];
+
         // Return images from Cloudinary URLs or fallback to base64 for backward compatibility
-        const cartItemsWithImages = cartItems.map(item => ({
+        const cartItemsWithImages = allCartItems.map(item => ({
             ...item,
             product_image: item.product_image_url || (item.product_image ? `data:image/jpeg;base64,${item.product_image.toString('base64')}` : null),
             // Remove URL field from response
             product_image_url: undefined
         }));
 
+        // Sort by added_at DESC
+        cartItemsWithImages.sort((a, b) => new Date(b.added_at) - new Date(a.added_at));
+
         // Calculate total
-        const total = cartItems.reduce((sum, item) => sum + (parseFloat(item.product_price) * item.quantity), 0);
+        const total = cartItemsWithImages.reduce((sum, item) => sum + (parseFloat(item.product_price) * (item.quantity || 1)), 0);
 
         res.json({
             success: true,
             cartItems: cartItemsWithImages,
-            count: cartItems.length,
+            count: cartItemsWithImages.length,
             total: total
         });
 
@@ -2257,14 +2714,33 @@ app.get('/api/cart/count', async (req, res) => {
     }
 
     try {
-        const [result] = await promisePool.execute(
+        // Get regular cart count
+        const [regularResult] = await promisePool.execute(
             'SELECT COUNT(*) as count FROM cart WHERE user_id = ?',
             [req.session.userId]
         );
 
+        let regularCount = regularResult[0].count;
+        let softwareCount = 0;
+
+        // Get software cart count
+        try {
+            const [softwareResult] = await promisePool.execute(
+                'SELECT COUNT(*) as count FROM software_cart WHERE user_id = ?',
+                [req.session.userId]
+            );
+            softwareCount = softwareResult[0].count;
+        } catch (error) {
+            console.warn('Software cart table not available:', error.message);
+        }
+
+        const totalCount = regularCount + softwareCount;
+
         res.json({
             success: true,
-            count: result[0].count
+            count: totalCount,
+            regularCount: regularCount,
+            softwareCount: softwareCount
         });
     } catch (error) {
         console.error('❌ Get cart count error:', error);
@@ -2502,30 +2978,66 @@ app.delete('/api/cart/:cartId', async (req, res) => {
     }
 
     const { cartId } = req.params;
+    const { productType } = req.query; // 'regular' or 'software'
 
     try {
-        // Verify cart item belongs to user
-        const [cartItems] = await promisePool.execute(
+        let tableName = 'cart';
+        let itemFound = false;
+
+        // Try to find in regular cart first
+        const [regularCartItems] = await promisePool.execute(
             'SELECT user_id FROM cart WHERE cart_id = ?',
             [cartId]
         );
 
-        if (cartItems.length === 0 || cartItems[0].user_id !== req.session.userId) {
-            return res.status(403).json({
+        if (regularCartItems.length > 0) {
+            if (regularCartItems[0].user_id !== req.session.userId) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Cart item not found or unauthorized'
+                });
+            }
+            tableName = 'cart';
+            itemFound = true;
+        } else {
+            // Try software cart
+            try {
+                const [softwareCartItems] = await promisePool.execute(
+                    'SELECT user_id FROM software_cart WHERE cart_id = ?',
+                    [cartId]
+                );
+
+                if (softwareCartItems.length > 0) {
+                    if (softwareCartItems[0].user_id !== req.session.userId) {
+                        return res.status(403).json({
+                            success: false,
+                            message: 'Cart item not found or unauthorized'
+                        });
+                    }
+                    tableName = 'software_cart';
+                    itemFound = true;
+                }
+            } catch (error) {
+                console.warn('Software cart table not available:', error.message);
+            }
+        }
+
+        if (!itemFound) {
+            return res.status(404).json({
                 success: false,
-                message: 'Cart item not found or unauthorized'
+                message: 'Cart item not found'
             });
         }
 
-        // Remove item from cart
+        // Remove item from appropriate cart table
         await promisePool.execute(
-            'DELETE FROM cart WHERE cart_id = ?',
+            `DELETE FROM ${tableName} WHERE cart_id = ?`,
             [cartId]
         );
 
         res.json({
             success: true,
-            message: 'Item removed from cart successfully'
+            message: `Item removed from cart successfully`
         });
 
     } catch (error) {
@@ -2533,6 +3045,252 @@ app.delete('/api/cart/:cartId', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to remove item from cart'
+        });
+    }
+});
+
+// Get a single product for editing
+app.get('/api/products/:productId', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ success: false, message: 'Please log in' });
+    }
+
+    const { productId } = req.params;
+
+    try {
+        // Get the product with user verification
+        const [products] = await promisePool.execute(
+            'SELECT * FROM products WHERE product_id = ? AND user_id = ?',
+            [productId, req.session.userId]
+        );
+
+        if (products.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found or you do not have permission to edit it'
+            });
+        }
+
+        res.json({
+            success: true,
+            product: products[0]
+        });
+
+    } catch (error) {
+        console.error('❌ Get product error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get product details'
+        });
+    }
+});
+
+// Update a product
+app.put('/api/products/:productId', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ success: false, message: 'Please log in' });
+    }
+
+    const { productId } = req.params;
+    const { name, description, price, category, condition, image1_url, image2_url, image3_url } = req.body;
+
+    // Validate required fields
+    if (!name || !category || !condition) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Name, category, and condition are required' 
+        });
+    }
+
+    // Validate price (if provided)
+    let finalPrice = 0;
+    if (price && price !== '') {
+        if (isNaN(price) || parseFloat(price) < 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please enter a valid price' 
+            });
+        }
+        finalPrice = parseFloat(price);
+    }
+
+    try {
+        // First, verify that the product belongs to the logged-in user
+        const [existingProducts] = await promisePool.execute(
+            'SELECT * FROM products WHERE product_id = ? AND user_id = ?',
+            [productId, req.session.userId]
+        );
+
+        if (existingProducts.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found or you do not have permission to edit it'
+            });
+        }
+
+        const existingProduct = existingProducts[0];
+        
+        // Use provided image URLs or keep existing ones
+        const imageUrls = {
+            image1_url: image1_url || existingProduct.image1_url,
+            image2_url: image2_url || existingProduct.image2_url,
+            image3_url: image3_url || existingProduct.image3_url
+        };
+
+        console.log(`📤 Updating product "${name}" (ID: ${productId})`);
+        console.log('📸 Image URLs:', imageUrls);
+
+        // Update the product
+        await promisePool.execute(
+            'UPDATE products SET name = ?, description = ?, price = ?, category = ?, condition_item = ?, image1_url = ?, image2_url = ?, image3_url = ?, updated_at = CURRENT_TIMESTAMP WHERE product_id = ? AND user_id = ?',
+            [name, description || '', finalPrice, category, condition, imageUrls.image1_url, imageUrls.image2_url, imageUrls.image3_url, productId, req.session.userId]
+        );
+
+        console.log(`✅ Product "${name}" updated successfully (ID: ${productId})`);
+
+        res.json({
+            success: true,
+            message: 'Product updated successfully!',
+            productId: productId,
+            images: imageUrls
+        });
+
+    } catch (error) {
+        console.error('❌ Update product error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update product. Please try again.'
+        });
+    }
+});
+
+// Update a software product
+app.put('/api/software/:softwareId', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ success: false, message: 'Please log in' });
+    }
+
+    const { softwareId } = req.params;
+
+    try {
+        const {
+            name,
+            description,
+            tagline,
+            price,
+            image1_url,
+            image2_url,
+            image3_url,
+            platform,
+            tech_stack,
+            developer_name,
+            license_type,
+            version,
+            download_link,
+            demo_link,
+            github_link,
+            documentation_link,
+            features,
+            system_requirements,
+            categories
+        } = req.body;
+
+        // First, verify that the software product belongs to the logged-in user
+        const [existingSoftware] = await promisePool.execute(
+            'SELECT * FROM software_products WHERE id = ? AND user_id = ?',
+            [softwareId, req.session.userId]
+        );
+
+        if (existingSoftware.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Software product not found or you do not have permission to edit it'
+            });
+        }
+
+        const existingProduct = existingSoftware[0];
+        
+        // Use provided image URLs or keep existing ones
+        const imageUrls = {
+            image1_url: image1_url || existingProduct.image1_url,
+            image2_url: image2_url || existingProduct.image2_url,
+            image3_url: image3_url || existingProduct.image3_url
+        };
+
+        console.log(`📤 Updating software product "${name}" (ID: ${softwareId})`);
+        console.log('📸 Image URLs:', imageUrls);
+
+        // Update software product
+        await promisePool.execute(`
+            UPDATE software_products SET 
+                name = ?, description = ?, tagline = ?, price = ?,
+                image1_url = ?, image2_url = ?, image3_url = ?,
+                platform = ?, tech_stack = ?, developer_name = ?, license_type = ?, version = ?,
+                download_link = ?, demo_link = ?, github_link = ?, documentation_link = ?,
+                features = ?, system_requirements = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+        `, [
+            name, description, tagline, price || 0,
+            imageUrls.image1_url, imageUrls.image2_url, imageUrls.image3_url,
+            platform, tech_stack, developer_name, license_type, version || '1.0.0',
+            download_link, demo_link, github_link, documentation_link,
+            JSON.stringify(features || []), JSON.stringify(system_requirements || {}),
+            softwareId, req.session.userId
+        ]);
+
+        // Update categories if provided
+        if (categories && categories.length > 0) {
+            // Remove existing categories
+            await promisePool.execute(
+                'DELETE FROM software_categories WHERE software_id = ?',
+                [softwareId]
+            );
+
+            // Add new categories
+            for (const categoryName of categories) {
+                try {
+                    // Get or create category
+                    let [categoryResult] = await promisePool.execute(
+                        'SELECT id FROM categories WHERE name = ?',
+                        [categoryName]
+                    );
+
+                    let categoryId;
+                    if (categoryResult.length === 0) {
+                        const [insertResult] = await promisePool.execute(
+                            'INSERT INTO categories (name) VALUES (?)',
+                            [categoryName]
+                        );
+                        categoryId = insertResult.insertId;
+                    } else {
+                        categoryId = categoryResult[0].id;
+                    }
+
+                    // Link software to category
+                    await promisePool.execute(
+                        'INSERT INTO software_categories (software_id, category_id) VALUES (?, ?)',
+                        [softwareId, categoryId]
+                    );
+                } catch (categoryError) {
+                    console.error(`❌ Error updating category ${categoryName}:`, categoryError);
+                }
+            }
+        }
+
+        console.log(`✅ Software product "${name}" updated successfully (ID: ${softwareId})`);
+
+        res.json({
+            success: true,
+            message: 'Software product updated successfully!',
+            softwareId: softwareId,
+            images: imageUrls
+        });
+
+    } catch (error) {
+        console.error('❌ Update software product error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update software product. Please try again.'
         });
     }
 });
@@ -2761,73 +3519,50 @@ app.get('/admin', requireAdmin, (req, res) => {
 });
 
 // Admin Dashboard Data
+// Add admin dashboard endpoint after the existing admin routes
+// Add this dashboard endpoint - just copy and paste this block into your app.js file
 app.get('/api/admin/dashboard', requireAdmin, async (req, res) => {
     try {
-        const [
-            [totalUsersResult],
-            [totalProductsResult],
-            [totalSoftwareResult],
-            [productsSoldResult],
-            [totalRevenueResult],
-            [freeDonationsResult],
-            [activeTodayResult]
-        ] = await Promise.all([
-            promisePool.execute('SELECT COUNT(*) as count FROM users'),
-            promisePool.execute('SELECT COUNT(*) as count FROM products'),
-            promisePool.execute('SELECT COUNT(*) as count FROM software_products'),
-            promisePool.execute('SELECT COUNT(*) as count FROM sold_items'),
-            promisePool.execute('SELECT COALESCE(SUM(price), 0) as total FROM sold_items'),
-            promisePool.execute('SELECT COUNT(*) as count FROM products WHERE price = 0'),
-            promisePool.execute(`
-                SELECT COUNT(DISTINCT user_id) as count 
-                FROM products 
-                WHERE DATE(created_at) = CURDATE()
-            `)
-        ]);
+        // Get total users
+        const [userResult] = await promisePool.execute('SELECT COUNT(*) as count FROM users');
+        const totalUsers = userResult[0].count;
 
-        // Get recent activity from both tables
-        const [recentActivity] = await promisePool.execute(`
-            (SELECT 
-                CONCAT('User ', u.username, ' listed product: ', p.name) as message,
-                p.created_at as timestamp,
-                'product' as type
-            FROM products p
-            JOIN users u ON p.user_id = u.id
-            ORDER BY p.created_at DESC
-            LIMIT 5)
-            UNION ALL
-            (SELECT 
-                CONCAT('User ', u.username, ' published software: ', sp.name) as message,
-                sp.created_at as timestamp,
-                'software' as type
-            FROM software_products sp
-            JOIN users u ON sp.user_id = u.id
-            ORDER BY sp.created_at DESC
-            LIMIT 5)
-            ORDER BY timestamp DESC
-            LIMIT 10
-        `);
+        // Get total products
+        const [productResult] = await promisePool.execute('SELECT COUNT(*) as count FROM products WHERE is_active = true');
+        const totalProducts = productResult[0].count;
+
+        // Get total sold items
+        const [soldResult] = await promisePool.execute('SELECT COUNT(*) as count, SUM(price) as revenue FROM sold_items');
+        const productsSold = soldResult[0].count || 0;
+        const totalRevenue = soldResult[0].revenue || 0;
+
+        // Get free donations
+        const [donationResult] = await promisePool.execute('SELECT COUNT(*) as count FROM products WHERE price = 0 AND is_active = true');
+        const freeDonations = donationResult[0].count;
+
+        // Get active users today
+        const [activeResult] = await promisePool.execute(
+            'SELECT COUNT(DISTINCT user_id) as count FROM products WHERE DATE(created_at) = CURDATE()'
+        );
+        const activeToday = activeResult[0].count;
 
         res.json({
             success: true,
             data: {
-                totalUsers: totalUsersResult[0].count,
-                totalProducts: totalProductsResult[0].count + totalSoftwareResult[0].count, // Combined count
-                regularProducts: totalProductsResult[0].count,
-                softwareProducts: totalSoftwareResult[0].count,
-                productsSold: productsSoldResult[0].count,
-                totalRevenue: totalRevenueResult[0].total,
-                freeDonations: freeDonationsResult[0].count,
-                activeToday: activeTodayResult[0].count,
-                recentActivity: recentActivity
+                totalUsers,
+                totalProducts,
+                productsSold,
+                totalRevenue,
+                freeDonations,
+                activeToday,
+                recentActivity: [] // Empty for now, can be enhanced later
             }
         });
-
     } catch (error) {
-        console.error('❌ Admin dashboard error:', error);
+        console.error('Dashboard Error:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to load dashboard data'
+            message: 'Error fetching dashboard data'
         });
     }
 });
@@ -3495,6 +4230,7 @@ app.use((req, res) => {
     });
 });
 
+// Search API endpoint
 // Start server
 app.listen(PORT, HOST, () => {
     console.log(`${config.app.name} server is running at http://${HOST}:${PORT}`);

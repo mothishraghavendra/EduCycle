@@ -897,56 +897,106 @@
         }
 
         // Dashboard data loading
-        async function loadDashboardData() {
-            try {
-                const response = await fetch('/api/admin/dashboard');
-                const data = await response.json();
-                
-                if (data.success) {
-                    dashboardData = data.data;
-                    updateDashboardStats(data.data);
-                    updateRecentActivity(data.data.recentActivity);
-                } else {
-                    console.error('Dashboard data error:', data.message);
-                }
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-                // Show error in stats
-                document.getElementById('totalUsers').textContent = 'Error';
-                document.getElementById('totalProducts').textContent = 'Error';
-                document.getElementById('productsSold').textContent = 'Error';
-                document.getElementById('totalRevenue').textContent = 'Error';
-                document.getElementById('freeDonations').textContent = 'Error';
-                document.getElementById('activeToday').textContent = 'Error';
-            }
+        // Update the loadDashboardData function
+async function loadDashboardData() {
+    try {
+        showLoading('Loading dashboard data...');
+        const response = await fetch('/api/admin/dashboard');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        function updateDashboardStats(data) {
-            document.getElementById('totalUsers').textContent = data.totalUsers || 0;
-            document.getElementById('totalProducts').textContent = data.totalProducts || 0;
-            document.getElementById('productsSold').textContent = data.productsSold || 0;
-            document.getElementById('totalRevenue').textContent = `₹${(data.totalRevenue || 0).toLocaleString()}`;
-            document.getElementById('freeDonations').textContent = data.freeDonations || 0;
-            document.getElementById('activeToday').textContent = data.activeToday || 0;
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            updateDashboardStats(data.data);
+            updateRecentActivity(data.data.recentActivity || []);
+            showNotification('Dashboard loaded successfully', 'success');
+        } else {
+            throw new Error(data.message || 'Failed to load dashboard data');
         }
+    } catch (error) {
+        console.error('Dashboard error:', error);
+        showNotification('Failed to load dashboard data: ' + error.message, 'error');
+        setErrorStats();
+    } finally {
+        hideLoading();
+    }
+}
 
-        function updateRecentActivity(activities) {
-            const container = document.getElementById('recentActivity');
-            if (!activities || activities.length === 0) {
-                container.innerHTML = '<div class="no-data"><i class="bi bi-info-circle"></i> No recent activity found</div>';
-                return;
-            }
+function updateDashboardStats(data) {
+    // Update stats with fallback values
+    document.getElementById('totalUsers').textContent = data.totalUsers || '0';
+    document.getElementById('totalProducts').textContent = data.totalProducts || '0';
+    document.getElementById('productsSold').textContent = data.productsSold || '0';
+    document.getElementById('totalRevenue').textContent = `₹${(data.totalRevenue || 0).toLocaleString('en-IN')}`;
+    document.getElementById('freeDonations').textContent = data.freeDonations || '0';
+    document.getElementById('activeToday').textContent = data.activeToday || '0';
+}
 
-            const activityHtml = activities.map(activity => `
-                <div class="activity-item">
-                    <div class="activity-icon"></div>
-                    <div class="activity-text">${activity.message}</div>
-                    <div class="activity-time">${new Date(activity.timestamp).toLocaleString()}</div>
-                </div>
-            `).join('');
+function setErrorStats() {
+    const errorText = 'Error';
+    const elements = ['totalUsers', 'totalProducts', 'productsSold', 'totalRevenue', 'freeDonations', 'activeToday'];
+    elements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = errorText;
+    });
+}
 
-            container.innerHTML = activityHtml;
-        }
+function updateRecentActivity(activities) {
+    const container = document.getElementById('recentActivity');
+    
+    if (!container) {
+        console.warn('Recent activity container not found');
+        return;
+    }
+    
+    if (!activities || activities.length === 0) {
+        container.innerHTML = '<div class="no-data"><i class="bi bi-info-circle"></i> No recent activity</div>';
+        return;
+    }
+
+    const activityHtml = activities.map(activity => `
+        <div class="activity-item">
+            <div class="activity-icon">
+                <i class="bi bi-${activity.type === 'product_listed' ? 'plus-circle' : 'check-circle'}"></i>
+            </div>
+            <div class="activity-content">
+                <div class="activity-text">${activity.message}</div>
+                <div class="activity-time">${formatDate(activity.timestamp)}</div>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = activityHtml;
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function showLoading(message = 'Loading...') {
+    // You can implement a loading indicator here
+    console.log('Loading:', message);
+}
+
+function hideLoading() {
+    // Hide loading indicator
+    console.log('Loading complete');
+}
+
+function showNotification(message, type = 'info') {
+    console.log(`${type.toUpperCase()}: ${message}`);
+    // You can implement a toast notification system here
+}
 
         // Users management
         async function loadUsers() {
