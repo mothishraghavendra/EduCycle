@@ -506,12 +506,10 @@
                             <i class="bi bi-cart-plus"></i> Add to Cart
                         </button>
                         ${product.product_type === 'software' ? 
-                            `<button class="download-btn" onclick="downloadSoftware(${product.product_id})" style="background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                <i class="bi bi-download"></i> Download
-                            </button>` :
+                            `` :
                             (hasValidPhone ? 
                                 `<button class="contact-seller-btn" onclick="contactSeller('${escapeHtml(product.seller_name || '')}', '${escapeHtml(product.name || '')}', '${escapeHtml(product.seller_phone || '')}')">
-                                    <i class="bi bi-whatsapp"></i> Contact Seller
+                                    <i class="bi bi-whatsapp"></i> Contact
                                 </button>` :
                                 `<button class="contact-seller-btn" disabled style="background-color: #ccc; cursor: not-allowed; opacity: 0.6;" title="Contact not available">
                                     <i class="bi bi-telephone-x"></i> Contact N/A
@@ -846,7 +844,86 @@ Thanks! 😊
                     button.disabled = false;
                     button.innerHTML = '<i class="bi bi-download"></i> Download';
                 }
+            }// Replace the existing downloadSoftware function with this improved version
+async function downloadSoftware(productId) {
+    const button = event?.target?.closest('.download-btn') || event?.target;
+    event.stopPropagation(); // Prevent product card click
+
+    try {
+        // Show loading state
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="bi bi-hourglass-split"></i> Preparing...';
+        }
+
+        // Check authentication first
+        const authResponse = await fetch('/api/check-auth');
+        const authData = await authResponse.json();
+
+        if (!authData.isAuthenticated) {
+            showMessage('error', 'Please log in to download software');
+            if (!window.parent || window.parent === window) {
+                window.location.href = '/login.html';
             }
+            return;
+        }
+
+        // Get software details
+        const response = await fetch(`/api/software/${productId}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch software details');
+        }
+
+        const data = await response.json();
+        
+        if (!data.success || !data.software) {
+            throw new Error(data.message || 'Software not found');
+        }
+
+        const software = data.software;
+
+        // Validate download link
+        if (!software.download_link || software.download_link === '#' || software.download_link.trim() === '') {
+            throw new Error('Download link not available for this software');
+        }
+
+        // Record download attempt
+        await fetch(`/api/software/${productId}/download`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // Update button to show success
+        if (button) {
+            button.innerHTML = '<i class="bi bi-check-circle"></i> Downloaded!';
+            button.style.backgroundColor = '#28a745';
+            
+            // Reset button after 2 seconds
+            setTimeout(() => {
+                button.disabled = false;
+                button.innerHTML = '<i class="bi bi-download"></i> Download';
+                button.style.backgroundColor = '#20c997';
+            }, 2000);
+        }
+
+        // Show success message and open download link
+        showMessage('success', 'Starting download...');
+        window.open(software.download_link, '_blank');
+
+    } catch (error) {
+        console.error('Download error:', error);
+        showMessage('error', error.message || 'Failed to download software');
+        
+        // Reset button state
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = '<i class="bi bi-download"></i> Download';
+            button.style.backgroundColor = '#20c997';
+        }
+    }
+}
         }
 
         // Add product to cart

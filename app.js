@@ -3521,23 +3521,33 @@ app.get('/admin', requireAdmin, (req, res) => {
 // Admin Dashboard Data
 // Add admin dashboard endpoint after the existing admin routes
 // Add this dashboard endpoint - just copy and paste this block into your app.js file
+// Admin Dashboard Data - Fixed to work with your current database schema
 app.get('/api/admin/dashboard', requireAdmin, async (req, res) => {
     try {
         // Get total users
         const [userResult] = await promisePool.execute('SELECT COUNT(*) as count FROM users');
         const totalUsers = userResult[0].count;
 
-        // Get total products
-        const [productResult] = await promisePool.execute('SELECT COUNT(*) as count FROM products WHERE is_active = true');
+        // Get total products - Remove the is_active check since column doesn't exist
+        const [productResult] = await promisePool.execute('SELECT COUNT(*) as count FROM products');
         const totalProducts = productResult[0].count;
 
+        // Get total software products - Remove is_active check
+        let totalSoftware = 0;
+        try {
+            const [softwareResult] = await promisePool.execute('SELECT COUNT(*) as count FROM software_products');
+            totalSoftware = softwareResult[0].count;
+        } catch (err) {
+            console.warn('Software products table not available:', err.message);
+        }
+
         // Get total sold items
-        const [soldResult] = await promisePool.execute('SELECT COUNT(*) as count, SUM(price) as revenue FROM sold_items');
+        const [soldResult] = await promisePool.execute('SELECT COUNT(*) as count, COALESCE(SUM(price), 0) as revenue FROM sold_items');
         const productsSold = soldResult[0].count || 0;
         const totalRevenue = soldResult[0].revenue || 0;
 
-        // Get free donations
-        const [donationResult] = await promisePool.execute('SELECT COUNT(*) as count FROM products WHERE price = 0 AND is_active = true');
+        // Get free donations - Remove is_active check
+        const [donationResult] = await promisePool.execute('SELECT COUNT(*) as count FROM products WHERE price = 0');
         const freeDonations = donationResult[0].count;
 
         // Get active users today
@@ -3546,16 +3556,55 @@ app.get('/api/admin/dashboard', requireAdmin, async (req, res) => {
         );
         const activeToday = activeResult[0].count;
 
+        // Get recent products (last 5) - Remove is_active check
+        const [recentProducts] = await promisePool.execute(`
+            SELECT 
+                p.product_id, p.name, p.price, p.category, p.created_at, 
+                u.username as seller_name, 'product' as type
+            FROM products p
+            JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
+            LIMIT 5
+        `);
+
+        // Get recent software (last 5) - Remove is_active check
+        let recentSoftware = [];
+        try {
+            const [softwareItems] = await promisePool.execute(`
+                SELECT 
+                    s.software_id as product_id, s.name, s.price, 
+                    'Software' as category, s.created_at,
+                    u.username as seller_name, 'software' as type
+                FROM software_products s
+                JOIN users u ON s.user_id = u.id
+                ORDER BY s.created_at DESC
+                LIMIT 5
+            `);
+            recentSoftware = softwareItems;
+        } catch (err) {
+            console.warn('Error fetching recent software:', err.message);
+        }
+
+        // Combine and sort recent activity
+        const recentActivity = [...recentProducts, ...recentSoftware]
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, 5)
+            .map(item => ({
+                type: 'product_listed',
+                message: `New ${item.type} listed: ${item.name}`,
+                timestamp: item.created_at
+            }));
+
         res.json({
             success: true,
             data: {
                 totalUsers,
-                totalProducts,
+                totalProducts: totalProducts + totalSoftware,
                 productsSold,
                 totalRevenue,
                 freeDonations,
                 activeToday,
-                recentActivity: [] // Empty for now, can be enhanced later
+                recentActivity
             }
         });
     } catch (error) {
@@ -4169,7 +4218,61 @@ app.post('/api/admin/clear-cache', requireAdmin, async (req, res) => {
         });
     }
 });
+// Add these endpoints to your app.js
 
+// Get software details endpoint
+app.get('/api/software/:id', async (req, res) => {
+    try {
+        const [software] = await promisePool.execute(`
+            SELECT s.*, u.username as seller_name 
+            FROM software_products s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.software_id = ? AND s.is_active = 1
+        `, [req.params.id]);
+
+        if (software.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Software not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            software: software[0]
+        });
+    } catch (error) {
+        console.error('Error fetching software:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching software details'
+        });
+    }
+});
+
+// Record software download endpoint
+app.post('/api/software/:id/download', requireLogin, async (req, res) => {
+    try {
+        // Update download count
+        await promisePool.execute(`
+            UPDATE software_products 
+            SET downloads_count = downloads_count + 1 
+            WHERE software_id = ?
+        `, [req.params.id]);
+
+        res.json({
+            success: true,
+            message: 'Download recorded successfully'
+        });
+    } catch (error) {
+        console.error('Error recording download:', error);
+        // Don't fail the download if tracking fails
+        res.json({
+            success: true,
+            message: 'Download initiated'
+        });
+    }
+});
 // ================================
 // END ADMIN PANEL ROUTES
 // ================================
@@ -4221,7 +4324,19 @@ app.use((err, req, res, next) => {
         message: 'Internal server error'
     });
 });
+// Add this middleware function near the top of your app.js file, 
+// where you have your other middleware definitions
 
+// Login requirement middleware
+function requireLogin(req, res, next) {
+    if (!req.session.userId) {
+        return res.status(401).json({
+            success: false,
+            message: 'Please log in to continue'
+        });
+    }
+    next();
+}
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({

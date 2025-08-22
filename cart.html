@@ -636,7 +636,6 @@
                     <div class="item-details" onclick="viewProductDetails(${item.product_id || item.software_id}, '${isSoftware ? 'software' : 'regular'}')" style="cursor: pointer;">
                         <div class="item-title">${item.product_name}</div>
                         <div class="item-seller">Sold by: ${item.seller_name}</div>
-                        ${hasValidPhone ? `<div class="seller-phone" style="font-size: 0.85rem; color: #28a745; margin: 3px 0;">📞 ${phoneDisplay}</div>` : ''}
                         ${isSoftware ? 
                             `<div class="item-platform" style="font-size: 0.9rem; color: #007bff; margin: 3px 0;"><i class="bi bi-laptop"></i> ${item.platform || 'Multi-platform'}</div>
                              ${item.tech_stack ? `<div class="item-tech" style="font-size: 0.8rem; color: #666; margin: 3px 0;"><strong>Tech:</strong> ${item.tech_stack}</div>` : ''}` :
